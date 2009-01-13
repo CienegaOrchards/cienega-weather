@@ -9,7 +9,7 @@ my $password = 'saywhat123';
 
 sub print_groups {
 	my($oscar) = @_;
-	my @groups = $oscar->groups();
+	my @groups = qw / Admin IM SMS /;
 	foreach my $group (@groups)
 	{
 		print "$group: ",join(',',$oscar->buddies($group)),"\n";
@@ -32,32 +32,46 @@ sub im_in {
 	print "[AWAY] " if $is_away;
 	print "$sender: $message\n";
 	$sender =~ /hugh3scr/ or return;
-	my ($command,$arg1,$arg2) = split /,/,$message;
+	my ($command,$arg1) = split / /,$message;
+	my @admins = $oscar->buddies("Admin");
+	return unless (grep {$_ eq $sender} @admins);
 	if($command =~ /list_groups/)
 	{
 		print_groups($oscar);
 	}
-	if($command =~ /add_group/)
+	if($command =~ /add_admin/)
 	{
-		$oscar->add_group($arg1);
+		$oscar->add_buddy("Admin",$arg1);
 		$oscar->commit_buddylist();
 		print_groups($oscar);
 	}
-	if($command =~ /add_buddy/)
+	if($command =~ /add_im/)
 	{
-		$oscar->add_buddy($arg1,$arg2);
+		$oscar->add_buddy("IM",$arg1);
 		$oscar->commit_buddylist();
 		print_groups($oscar);
 	}
-	if($command =~ /remove_buddy/)
+	if($command =~ /add_sms/)
 	{
-		$oscar->remove_buddy($arg1,$arg2);
+		$oscar->add_buddy("SMS",$arg1);
 		$oscar->commit_buddylist();
 		print_groups($oscar);
 	}
-	if($command =~ /remove_group/)
+	if($command =~ /remove_admin/)
 	{
-		$oscar->remove_group($arg1);
+		$oscar->remove_buddy("Admin",$arg1);
+		$oscar->commit_buddylist();
+		print_groups($oscar);
+	}
+	if($command =~ /remove_im/)
+	{
+		$oscar->remove_buddy("IM",$arg1);
+		$oscar->commit_buddylist();
+		print_groups($oscar);
+	}
+	if($command =~ /remove_sms/)
+	{
+		$oscar->remove_buddy("SMS",$arg1);
 		$oscar->commit_buddylist();
 		print_groups($oscar);
 	}
@@ -80,7 +94,7 @@ sub on_error {
 }
 
 my $oscar = Net::OSCAR->new();
-$oscar->loglevel(OSCAR_DBG_INFO);
+#$oscar->loglevel(OSCAR_DBG_INFO);
 $oscar->set_callback_im_in(\&im_in);
 $oscar->set_callback_signon_done(\&signon_done);
 $oscar->set_callback_buddylist_ok(\&on_buddylist_ok);
