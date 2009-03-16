@@ -1,3 +1,5 @@
 *.png
 *.csv
 *.rrd
+weather_data.log
+forecast_data.log
