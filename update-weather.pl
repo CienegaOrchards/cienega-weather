@@ -23,6 +23,17 @@ my $exp = Expect->exp_init($fh);
 $exp->stty(qw(9600 raw -echo));
 #$exp->slave->stty(qw(9600 raw -echo));
 
+$exp->log_file("weather_data.log");
+
+# First set time to current time in case clock got lost or drifted
+print $exp UnixDate(ParseDate("now"),":K%m%d%H%M%S\n");
+$exp->expect(10, [ qr/OK/ => sub {
+					my $exp = shift;
+					print "Clock set to current time OK\n";
+				} ],
+	);
+
+
 print $exp ":O";
 
 $exp->expect(10,
@@ -43,7 +54,10 @@ $exp->expect(10,
 				 } ],
 		[ qr/E(?=.*\n)/ => sub	{
 					my $exp = shift;
-					print "Got error line: ",$exp->after,"\n";
+					if($exp->after !~ /(Clock set|New clock time)/i)
+					{
+						print "Got error line: ",$exp->after,"\n";
+					}
 					$exp->exp_continue;
 				 } ],
 		[ qr/D,(?=.*\n)/ => sub {
@@ -72,6 +86,12 @@ sub weather_parse
 	my ($date,$time,$temp,$hum,$pressure,$wind_dir,$wind_spd,$wind_spd_hi,$rainfall,$batt,$chill,$crc) = split /,/,$line;
 	
 	my $timestamp = UnixDate(ParseDate("$date $time"),"%s");
+	if($timestamp > UnixDate(ParseDate("now"),"%s"))
+	{
+		print "Got data item which looks like it was last year\n";
+		my $year = UnixDate(ParseDate("now"),"%Y")-1;
+		$timestamp = UnixDate(ParseDate("$date/$year $time"),"%s");
+	}
 
 	print "$date\t$time\t$temp\t$chill\t$hum\t$pressure\t$wind_spd\t$rainfall\n";
 	eval { $rrd->update($timestamp,
