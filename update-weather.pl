@@ -20,7 +20,7 @@ my $fh = new IO::File("+<$port");
 
 my $exp = Expect->exp_init($fh);
 
-$exp->stty(qw(9600 raw -echo));
+$exp->stty(qw(9600 sane -echo));
 #$exp->slave->stty(qw(9600 raw -echo));
 
 $exp->log_file("weather_data.log");
@@ -82,6 +82,8 @@ $exp->expect(10,
 sub weather_parse
 {
 	my $line = shift;
+	chomp $line;
+
 
 	my ($date,$time,$temp,$hum,$pressure,$wind_dir,$wind_spd,$wind_spd_hi,$rainfall,$batt,$chill,$crc) = split /,/,$line;
 	
