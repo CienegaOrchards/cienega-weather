@@ -1,3 +1,4 @@
-!mail(no),nolog
+# m h  dom mon dow   command
 
-@ 15	(cd /home/craig/code;/home/craig/code/update-weather.pl;/home/craig/code/humidity.sh;/home/craig/code/temp-dewpoint.sh;/home/craig/code/pressure.sh) > /dev/null
+0-59/15 * * * *	(cd /home/craig/code;/home/craig/code/update-weather.pl) > /dev/null
+15 22 * * * (cd /home/craig/code;/home/craig/code/getforecast.pl) > /dev/null
