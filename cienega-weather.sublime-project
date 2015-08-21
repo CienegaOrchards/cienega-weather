@@ -1,0 +1,28 @@
+{
+    "folders":
+    [
+        {
+            "name": "Source",
+            "folder_exclude_patterns":
+            [
+                "node_modules",
+                "public/js/libs",
+                "logs"
+            ],
+            "follow_symlinks": true,
+            "path": "src"
+        },
+        {
+            "name": "Documentation",
+            "path": "docs"
+        },
+        {
+            "name": "Scripts",
+            "path": "misc"
+        }
+    ],
+    "settings":
+    {
+          "search_in_project_TheSilverSearcher_common_options": "--ignore node_modules --ignore public/js/libs --ignore logs"
+    }
+}
