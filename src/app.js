@@ -1,4 +1,5 @@
 var weather       = new (require('wundergroundnode'))('***REMOVED***');
+var twilio        = require('twilio')('***REMOVED***', '***REMOVED***');
 var influx        = require('influx')({host:'localhost',database:'weather'});
 
 var http          = require('http');
@@ -13,7 +14,7 @@ var compression   = require('compression');
 var cookieSession = require('cookie-session');
 var serveStatic   = require('serve-static');
 
-var routes        = require('./routes/index')(influx, weather);
+var routes        = require('./routes/index')(influx, weather, twilio);
 
 var logger        = require('./lib/logger');
 

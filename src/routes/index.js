@@ -1,6 +1,6 @@
 var router = require('express').Router();
 
-module.exports = function(influx, weather)
+module.exports = function(influx, weather, twilio)
 {
     weather.hourlyForecast().request('pws:KCAHOLLI23', function(err, resp)
     {
@@ -27,6 +27,20 @@ module.exports = function(influx, weather)
                 console.log("Database:",name);
             });
         }
+    });
+
+    twilio.messages.create({
+        to: "+16508514450",
+        from: "+16503326710",
+        body: "Hi there!  This is a test!",
+    })
+    .then(function(message)
+    {
+        console.log(message);
+    })
+    .then(null, function(err)
+    {
+        console.error(err);
     });
 
     /* GET home page. */
