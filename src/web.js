@@ -1,9 +1,4 @@
-var serialport    = require('serialport');
-var weather       = new (require('wundergroundnode'))('***REMOVED***');
-var twilio        = require('twilio')('***REMOVED***', '***REMOVED***');
-var influx        = require('influx')({host:'localhost',database:'weather'});
-
-
+var logger        = require('./lib/logger');
 var http          = require('http');
 var https         = require('https');
 var express       = require('express');
@@ -16,9 +11,7 @@ var compression   = require('compression');
 var cookieSession = require('cookie-session');
 var serveStatic   = require('serve-static');
 
-var routes        = require('./routes/index')(serialport, influx, weather, twilio);
-
-var logger        = require('./lib/logger');
+var routes        = require('./routes/index');
 
 var app = express();
 
@@ -47,9 +40,9 @@ app.use('/', routes);
 // catch 404 and forward to error handler
 app.use(function(req, res, next)
 {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
+    var err = new Error('Not Found');
+    err.status = 404;
+    next(err);
 });
 
 // error handlers

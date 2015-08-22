@@ -3,7 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./web.js"
+    "start"        : "npm run serial & npm run wunderground & npm run txt & npm run web",
+    "serial"       : "node serialMonitor.js",
+    "wunderground" : "node wundergroundMonitor.js",
+    "txt"          : "node txtNotifier.js",
+    "web"          : "node web.js"
   },
   "dependencies": {
     "body-parser": "~1.13.2",
