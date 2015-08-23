@@ -41,6 +41,10 @@ serialport.list(function(err, ports)
                             state++;
                             stationStream.write(moment().format('[:k]MMDDHHmmss'));
                         }
+                        else
+                        {
+                            console.error("Unexpected:",data);
+                        }
                         break;
 
                     case 1:
@@ -48,6 +52,10 @@ serialport.list(function(err, ports)
                         {
                             state++;
                             stationStream.write(':q');
+                        }
+                        else
+                        {
+                            console.error("Unexpected:",data);
                         }
                         break;
 
@@ -63,10 +71,14 @@ serialport.list(function(err, ports)
                             lines = [];
                             stationStream.write(':o');
                         }
+                        else
+                        {
+                            console.error("Unexpected:",data);
+                        }
                         break;
 
                     case 3:
-                        if(header === undefined)
+                        if(header === undefined && data.mastch(/^H,/))
                         {
                             header = data.split(',');
                             console.log('Got header',header);
@@ -75,13 +87,17 @@ serialport.list(function(err, ports)
                         {
                             lines.push(_.object(header, data.split(',')));
                         }
-                        else
+                        else if(data === 'OK')
                         {
                             // Got 'OK trailer'
                             console.log('Received',lines.length,'cached lines');
                             console.log(lines);
                             state++;
                             stationStream.write(':z');
+                        }
+                        else
+                        {
+                            console.error('Unexpected:',data);
                         }
                         break;
 
@@ -92,12 +108,16 @@ serialport.list(function(err, ports)
                             state++;
                             stationStream.write(':a');
                         }
+                        else
+                        {
+                            console.error('Unexpected:',data);
+                        }
                         break;
 
                     case 5:
                         if(data === 'OK')
                         {
-                            console.log('Automatice reporting now on');
+                            console.log('Automatic reporting now on');
                         }
                         else if(data.match(/^D,/))
                         {
@@ -122,7 +142,7 @@ serialport.list(function(err, ports)
 
             stationStream.on('open', function()
             {
-                stationStream.write(':\r\n');
+                stationStream.write(':::');
             });
         }
     }
