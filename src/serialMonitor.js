@@ -2,6 +2,7 @@ var logger     = require('./lib/logger');
 var influx     = require('influx')({host:'localhost',database:'weather'});
 var serialport = require('serialport');
 var moment     = require('moment');
+var _          = require('underscore');
 
 serialport.list(function(err, ports)
 {
@@ -70,14 +71,15 @@ serialport.list(function(err, ports)
                             header = data.split(',');
                             console.log('Got header',header);
                         }
-                        else if(data !== 'OK')
+                        else if(data.match(/^D,/))
                         {
-                            lines.push(data);
+                            lines.push(_.object(header, data.split(',')));
                         }
                         else
                         {
                             // Got 'OK trailer'
                             console.log('Received',lines.length,'cached lines');
+                            console.log(lines);
                             state++;
                             stationStream.write(':z');
                         }
@@ -97,9 +99,13 @@ serialport.list(function(err, ports)
                         {
                             console.log('Automatice reporting now on');
                         }
+                        else if(data.match(/^D,/))
+                        {
+                            console.log('Received:',_.object(header, data.split(',')));
+                        }
                         else
                         {
-                            console.log('Received:',data);
+                            console.error('Unexpected:',data);
                         }
                 }
             });
