@@ -1,8 +1,27 @@
 var logger     = require('./lib/logger');
-var influx     = require('influx')({host:'localhost',database:'weather'});
+var influx     = require('influx');
 var serialport = require('serialport');
 var moment     = require('moment');
 var _          = require('underscore');
+
+
+var influxClient = influx({host:'localhost',database:'weather'});
+
+influxClient.getDatabaseNames(function(err,dbnames)
+{
+    if(err)
+    {
+        console.error(err);
+    }
+    else
+    {
+        dbnames.forEach(function(name)
+        {
+            console.log("Database:",name);
+        });
+    }
+});
+
 
 function parseWeatherLine(header, data)
 {
@@ -13,7 +32,7 @@ function parseWeatherLine(header, data)
     }
 
     var now = moment().local();
-    var result = { TIME: moment(data[header.indexOf('DATE')] + data[header.indexOf('TIME')], 'MM/DDHH:mm:ss').local().toISOString() };
+    var result = { TIME: moment(data[header.indexOf('DATE')] + data[header.indexOf('TIME')], 'MM/DDHH:mm:ss') };
     header.forEach(function(h,i)
     {
         if(!(h === 'H' || h === 'DATE' || h === 'TIME'))
@@ -23,6 +42,36 @@ function parseWeatherLine(header, data)
     });
 
     return result;
+}
+
+function saveWeatherToDB(data)
+{
+    var time = data.TIME;
+    delete data.TIME;
+    data.time = time._d;
+    console.log('Saving data point:',data,'for time:',time.local().format());
+    influxClient.writePoint('heartbeat', 1, {mode:'test'}, function(err, resp)
+    {
+        if(err)
+        {
+            console.error('Error:',err);
+        }
+        else
+        {
+            console.log('Done:',resp);
+        }
+    });
+    influxClient.writePoint('station', data, {mode:'test'}, function(err, resp)
+    {
+        if(err)
+        {
+            console.error('Error:',err);
+        }
+        else
+        {
+            console.log('Done:',resp);
+        }
+    });
 }
 
 serialport.list(function(err, ports)
@@ -51,7 +100,6 @@ serialport.list(function(err, ports)
 
             var state = 0;
             var header;
-            var lines;
 
             stationStream.on('data', function(data)
             {
@@ -69,7 +117,6 @@ serialport.list(function(err, ports)
                             console.log('Will receive',numLogged,'of',maxLogged);
 
                             state++;
-                            lines = [];
                             stationStream.write(':o');
                         }
                         else
@@ -87,13 +134,11 @@ serialport.list(function(err, ports)
                         }
                         else if(data.match(/^D,/))
                         {
-                            lines.push(parseWeatherLine(header, data.split(','))); // Initial chops off the checksum field
+                            saveWeatherToDB(parseWeatherLine(header, data.split(',')))
                         }
                         else if(data === 'OK')
                         {
-                            // Got 'OK trailer'
-                            console.log('Received',lines.length,'cached lines');
-                            console.log(lines);
+                            console.log('Got all saved lines');
                             state++;
                             stationStream.write(':z');
                         }
@@ -109,6 +154,7 @@ serialport.list(function(err, ports)
                         {
                             console.log('Data cleared OK');
                             state++;
+                            console.log("Setting clock to:",':K'+moment().local().format('MMDDHHmmss'));
                             stationStream.write(':K'+moment().local().format('MMDDHHmmss'));
                         }
                         else
@@ -122,6 +168,12 @@ serialport.list(function(err, ports)
                         if(data === 'OK')
                         {
                             console.log('Date set OK');
+                            stationStream.write(':a');
+                            state++;
+                        }
+                        else if(data === 'Clock not set.')
+                        {
+                            console.error('Clock set failed??!?');
                             stationStream.write(':a');
                             state++;
                         }
@@ -139,7 +191,8 @@ serialport.list(function(err, ports)
                         }
                         else if(data.match(/^D,/))
                         {
-                            console.log('Received:',parseWeatherLine(header, _.initial(data.split(',')))); // Initial chops off the checksum field
+                            console.log('Received data point');
+                            saveWeatherToDB(parseWeatherLine(header, _.initial(data.split(','))));
                         }
                         else
                         {
@@ -170,20 +223,5 @@ serialport.list(function(err, ports)
                 if(err) console.error('Serial port open error:', err);
             });
         }
-    }
-});
-
-influx.getDatabaseNames(function(err,dbnames)
-{
-    if(err)
-    {
-        console.error(err);
-    }
-    else
-    {
-        dbnames.forEach(function(name)
-        {
-            console.log("Database:",name);
-        });
     }
 });
