@@ -24,7 +24,8 @@ serialport.list(function(err, ports)
             var stationStream = new serialport.SerialPort(stationPort.comName, {
                 baudrate: 9600,
                 parser: serialport.parsers.readline("\r\n"),
-            });
+
+            }, false); // Do not auto-open
 
             var state = 0;
             var header;
@@ -142,7 +143,14 @@ serialport.list(function(err, ports)
 
             stationStream.on('open', function()
             {
+                console.log('Serial port open; sending init sequence');
                 stationStream.write(':::');
+            });
+
+            // Now open the port since all handlers registered
+            stationStream.open(function(err)
+            {
+                console.error('Serial port open error:',err);
             });
         }
     }
