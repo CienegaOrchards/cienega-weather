@@ -37,18 +37,6 @@ serialport.list(function(err, ports)
                 switch(state)
                 {
                     case 0:
-                        if(data === '?')
-                        {
-                            state++;
-                            stationStream.write(moment().format('[:k]MMDDHHmmss'));
-                        }
-                        else
-                        {
-                            console.error("Unexpected:",data);
-                        }
-                        break;
-
-                    case 1:
                         if(data === 'OK')
                         {
                             state++;
@@ -60,7 +48,7 @@ serialport.list(function(err, ports)
                         }
                         break;
 
-                    case 2:
+                    case 1:
                         var matches = data.match(/\s+([0-9]*) items of ([0-9]*)/);
                         if(matches)
                         {
@@ -78,7 +66,7 @@ serialport.list(function(err, ports)
                         }
                         break;
 
-                    case 3:
+                    case 2:
                         if(header === undefined && data.mastch(/^H,/))
                         {
                             header = data.split(',');
@@ -102,7 +90,7 @@ serialport.list(function(err, ports)
                         }
                         break;
 
-                    case 4:
+                    case 3:
                         if(data === 'OK')
                         {
                             console.log('Data cleared OK');
@@ -115,7 +103,7 @@ serialport.list(function(err, ports)
                         }
                         break;
 
-                    case 5:
+                    case 4:
                         if(data === 'OK')
                         {
                             console.log('Automatic reporting now on');
@@ -144,13 +132,13 @@ serialport.list(function(err, ports)
             stationStream.on('open', function()
             {
                 console.log('Serial port open; sending init sequence');
-                stationStream.write(':::');
+                stationStream.write(':::Q');
             });
 
             // Now open the port since all handlers registered
             stationStream.open(function(err)
             {
-                console.error('Serial port open error:',err);
+                if(err) console.error('Serial port open error:', err);
             });
         }
     }
