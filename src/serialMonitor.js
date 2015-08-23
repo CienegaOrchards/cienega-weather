@@ -33,22 +33,12 @@ serialport.list(function(err, ports)
 
             stationStream.on('data', function(data)
             {
-                data = data.replace(/^\>/,'');
+                console.log('Pre data:',data);
                 switch(state)
                 {
                     case 0:
-                        if(data === 'OK')
-                        {
-                            state++;
-                            stationStream.write(':q');
-                        }
-                        else
-                        {
-                            console.error("Unexpected:",data);
-                        }
-                        break;
-
-                    case 1:
+                        data = data.replace(/^\>+/,'');
+                        console.log('Post data:',data);
                         var matches = data.match(/\s+([0-9]*) items of ([0-9]*)/);
                         if(matches)
                         {
@@ -66,8 +56,9 @@ serialport.list(function(err, ports)
                         }
                         break;
 
-                    case 2:
-                        if(header === undefined && data.mastch(/^H,/))
+                    case 1:
+                        data = data.replace(/^\>+/,'');
+                        if(header === undefined && data.match(/^H,/))
                         {
                             header = data.split(',');
                             console.log('Got header',header);
@@ -90,7 +81,8 @@ serialport.list(function(err, ports)
                         }
                         break;
 
-                    case 3:
+                    case 2:
+                        data = data.replace(/^\>+/,'');
                         if(data === 'OK')
                         {
                             console.log('Data cleared OK');
@@ -103,7 +95,8 @@ serialport.list(function(err, ports)
                         }
                         break;
 
-                    case 4:
+                    case 3:
+                        data = data.replace(/^\>+/,'');
                         if(data === 'OK')
                         {
                             console.log('Automatic reporting now on');
@@ -132,7 +125,7 @@ serialport.list(function(err, ports)
             stationStream.on('open', function()
             {
                 console.log('Serial port open; sending init sequence');
-                stationStream.write(':::Q');
+                stationStream.write(':::::::::::::::::Q');
             });
 
             // Now open the port since all handlers registered
