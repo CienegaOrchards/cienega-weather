@@ -4,6 +4,27 @@ var serialport = require('serialport');
 var moment     = require('moment');
 var _          = require('underscore');
 
+function parseWeatherLine(header, data)
+{
+    if(header.length !== data.length)
+    {
+        console.error('Mismatch in length: header == ',header.length,', data == ',data.length);
+        return null;
+    }
+
+    var now = moment().local();
+    var result = { TIME: moment(data[header.indexOf('DATE')] + data[header.indexOf('TIME')], 'MM/DDHH:mm:ss').local().toISOString() };
+    header.forEach(function(h,i)
+    {
+        if(!(h === 'H' || h === 'DATE' || h === 'TIME'))
+        {
+            result[h] = parseFloat(data[i]);
+        }
+    });
+
+    return result;
+}
+
 serialport.list(function(err, ports)
 {
     if(err)
@@ -21,10 +42,11 @@ serialport.list(function(err, ports)
         {
             var stationPort = ports[0];
 
+            console.log('Using:',stationPort);
+
             var stationStream = new serialport.SerialPort(stationPort.comName, {
                 baudrate: 9600,
                 parser: serialport.parsers.readline("\r\n"),
-
             }, false); // Do not auto-open
 
             var state = 0;
@@ -65,7 +87,7 @@ serialport.list(function(err, ports)
                         }
                         else if(data.match(/^D,/))
                         {
-                            lines.push(_.object(header, data.split(',')));
+                            lines.push(parseWeatherLine(header, data.split(','))); // Initial chops off the checksum field
                         }
                         else if(data === 'OK')
                         {
@@ -87,7 +109,7 @@ serialport.list(function(err, ports)
                         {
                             console.log('Data cleared OK');
                             state++;
-                            stationStream.write(':a');
+                            stationStream.write(':K'+moment().local().format('MMDDHHmmss'));
                         }
                         else
                         {
@@ -99,11 +121,25 @@ serialport.list(function(err, ports)
                         data = data.replace(/^\>+/,'');
                         if(data === 'OK')
                         {
+                            console.log('Date set OK');
+                            stationStream.write(':a');
+                            state++;
+                        }
+                        else
+                        {
+                            console.error('Unexpected:',data);
+                        }
+                        break;
+
+                    case 4:
+                        data = data.replace(/^\>+/,'');
+                        if(data === 'OK')
+                        {
                             console.log('Automatic reporting now on');
                         }
                         else if(data.match(/^D,/))
                         {
-                            console.log('Received:',_.object(header, data.split(',')));
+                            console.log('Received:',parseWeatherLine(header, _.initial(data.split(',')))); // Initial chops off the checksum field
                         }
                         else
                         {
