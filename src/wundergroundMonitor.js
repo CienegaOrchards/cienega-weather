@@ -1,5 +1,8 @@
 var logger        = require('./lib/logger');
-var weather       = new (require('wundergroundnode'))('***REMOVED***');
+var nconf         = require('nconf');
+nconf.argv().env().file({ file: 'api-keys.json' });
+
+var weather       = new (require('wundergroundnode'))(nconf.get('WUNDERGROUND:API_KEY'));
 
 weather.hourlyForecast().request('pws:KCAHOLLI23', function(err, resp)
 {
