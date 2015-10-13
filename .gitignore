@@ -34,3 +34,4 @@ npm-debug.log
 
 # Secret API keys
 api-keys.json
+src/data_lines*
