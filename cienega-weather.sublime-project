@@ -3,26 +3,30 @@
     [
         {
             "name": "Source",
+            "path": ".",
             "folder_exclude_patterns":
             [
                 "node_modules",
-                "public/js/libs",
-                "logs"
+                "test",
+                "docs",
+                "coverage"
             ],
-            "follow_symlinks": true,
-            "path": "src"
+        },
+        {
+            "name": "Tests",
+            "path": "test"
+        },
+        {
+            "name": "Coverage",
+            "path": "coverage"
         },
         {
             "name": "Documentation",
             "path": "docs"
         },
-        {
-            "name": "Scripts",
-            "path": "misc"
-        }
     ],
     "settings":
     {
-          "search_in_project_TheSilverSearcher_common_options": "--ignore node_modules --ignore public/js/libs --ignore logs"
+          "search_in_project_TheSilverSearcher_common_options": "--ignore node_modules"
     }
 }

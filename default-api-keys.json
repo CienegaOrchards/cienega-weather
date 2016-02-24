@@ -1,0 +1,14 @@
+{
+    "WUNDERGROUND":
+    {
+        "API_KEY": "12345",
+        "RANCH_PWS": "pws:KCAHOLLI28",
+        "PORTOLA_VALLEY_PWS": "pws:KCAPORTO39"
+    },
+    "TWILIO":
+    {
+        "ACCOUNT_SID": "ABCDEF",
+        "AUTH_TOKEN": "QRSTUV",
+        "SENDING_NUMBER": "+19119119111"
+    }
+}
