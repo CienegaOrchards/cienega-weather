@@ -8,6 +8,7 @@
     "test": "grunt test"
   },
   "dependencies": {
+    "aws-sdk": "~2.2.38",
     "es6-promisify": "~3.0.0",
     "moment": "~2.11.2",
     "morgan": "~1.7.0",

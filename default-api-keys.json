@@ -10,5 +10,11 @@
         "ACCOUNT_SID": "ABCDEF",
         "AUTH_TOKEN": "QRSTUV",
         "SENDING_NUMBER": "+19119119111"
+    },
+    "AWS":
+    {
+        "ACCESS_KEY_ID": "",
+        "SECRET_ACCESS_KEY": "",
+        "DYNAMO_ENDPOINT": "dynamodb.us-west-2.amazonaws.com"
     }
 }
