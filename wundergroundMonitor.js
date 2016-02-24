@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 require('./lib/logger');
 var nconf     = require('nconf');
@@ -17,48 +17,50 @@ const ACTIVE_PWS = nconf.get('WUNDERGROUND:PORTOLA_VALLEY_PWS');
 
 var twilio = require('twilio')(nconf.get('TWILIO:ACCOUNT_SID'), nconf.get('TWILIO:AUTH_TOKEN'));
 
-
-hourlyForecast(ACTIVE_PWS)
-.then(function(resp)
+exports.sendMinimumForecast = function(event, context)
 {
-    var forecast = resp.hourly_forecast;
-
-    forecast = _.map(forecast, function(hour)
+    hourlyForecast(ACTIVE_PWS)
+    .then(function(resp)
     {
-        var timestamp = moment.unix(parseInt(hour.FCTTIME.epoch));
-        var temp = parseInt(hour.temp.english);
-        var feelslike = parseInt(hour.feelslike.english);
+        var forecast = resp.hourly_forecast;
 
-        return {
-            time: timestamp,
-            temp: temp,
-            feelslike: feelslike,
-        };
-    });
+        forecast = _.map(forecast, function(hour)
+        {
+            var timestamp = moment.unix(parseInt(hour.FCTTIME.epoch));
+            var temp = parseInt(hour.temp.english);
+            var feelslike = parseInt(hour.feelslike.english);
 
-    var minForecast = _.min(forecast, function(f)
+            return {
+                time: timestamp,
+                temp: temp,
+                feelslike: feelslike,
+            };
+        });
+
+        var minForecast = _.min(forecast, function(f)
+        {
+            return f.feelslike;
+        });
+
+        var messageBody = `Minimum forecast temp is ${minForecast.temp}ºF `;
+        if(minForecast.temp !== minForecast.feelslike)
+        {
+            messageBody += `(feels like ${minForecast.feelslike}) `;
+        }
+        messageBody += `${minForecast.time.format('dddd [at] ha')}`;
+
+        return twilio.messages.create({
+            to: '+16508514450',
+            from: nconf.get('TWILIO:SENDING_NUMBER'),
+            body: messageBody,
+        });
+    })
+    .then(function(result)
     {
-        return f.feelslike;
-    });
-
-    var messageBody = `Minimum forecast temp is ${minForecast.temp}ºF `;
-    if(minForecast.temp !== minForecast.feelslike)
+        context.succeed(result.body);
+    })
+    .catch(function(err)
     {
-        messageBody += `(feels like ${minForecast.feelslike}) `;
-    }
-    messageBody += `${minForecast.time.format('dddd [at] ha')}`;
-
-    return twilio.messages.create({
-        to: '+16508514450',
-        from: nconf.get('TWILIO:SENDING_NUMBER'),
-        body: messageBody,
+        context.fail(err);
     });
-})
-.then(function(result)
-{
-    console.log(result);
-})
-.catch(function(err)
-{
-    console.error(err.stack);
-});
+};

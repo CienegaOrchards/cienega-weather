@@ -1,12 +1,18 @@
 # Coverage directory used by tools like istanbul
-coverage
+coverage/
 
 # Dependency directory
 # https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git-
-node_modules
+node_modules/
 
 # Debug log from npm
 npm-debug.log
 
 # Secret API keys
 api-keys.json
+
+# Lambda distribution directory
+dist/
+
+# Transpiled sources
+*_es5.js
