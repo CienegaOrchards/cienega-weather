@@ -18,6 +18,7 @@ describe('Config', function()
         {
             config.should.have.property('WUNDERGROUND');
             config.should.have.property('TWILIO');
+            config.should.have.property('AWS');
         });
 
         it('should have required WUNDERGROUND settings', function()
@@ -32,6 +33,13 @@ describe('Config', function()
             config.TWILIO.should.have.property('ACCOUNT_SID');
             config.TWILIO.should.have.property('AUTH_TOKEN');
             config.TWILIO.should.have.property('SENDING_NUMBER');
+        });
+
+        it('should have required AWS settings', function()
+        {
+            config.AWS.should.have.property('ACCESS_KEY_ID');
+            config.AWS.should.have.property('SECRET_ACCESS_KEY');
+            config.AWS.should.have.property('DYNAMO_ENDPOINT');
         });
     });
 });
