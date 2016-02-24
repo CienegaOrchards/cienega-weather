@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 require('./lib/logger');
 var nconf     = require('nconf');
@@ -55,5 +55,12 @@ exports.sendMinimumForecast = function(event, context)
             body: messageBody,
         });
     })
-    .then(context.done.bind(context));
+    .then(function(result)
+    {
+        context.succeed(result.body);
+    })
+    .catch(function(err)
+    {
+        context.fail(err);
+    });
 };

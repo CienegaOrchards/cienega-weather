@@ -62,7 +62,7 @@ module.exports = function(grunt) {
 
             es6transpiler:
             {
-                default:
+                'default':
                 {
                     files:
                     {
@@ -73,14 +73,18 @@ module.exports = function(grunt) {
 
             lambda_package:
             {
-                default:
+                'default':
                 {
+                    options:
+                    {
+                        include_files: ['*.js', '*.json', 'lib/**/*.js', 'node_modules/**/*.js', 'node_modules/**/*.json'],
+                    },
                 },
             },
 
             lambda_deploy:
             {
-                default:
+                'default':
                 {
                     arn: 'arn:aws:lambda:us-west-2:281650663203:function:sendMinimumForecast',
                     options:
