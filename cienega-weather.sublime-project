@@ -3,22 +3,27 @@
     [
         {
             "name": "Source",
+            "path": ".",
             "folder_exclude_patterns":
             [
                 "node_modules",
-                "test"
+                "test",
+                "docs",
+                "coverage"
             ],
-            "follow_symlinks": true,
-            "path": "src"
         },
         {
             "name": "Tests",
-            "path": "src/test"
+            "path": "test"
+        },
+        {
+            "name": "Coverage",
+            "path": "coverage"
         },
         {
             "name": "Documentation",
             "path": "docs"
-        }
+        },
     ],
     "settings":
     {

@@ -1,0 +1,36 @@
+{
+  "name": "cienega-weather",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "wunderground": "node wundergroundMonitor.js",
+    "txt": "node txtNotifier.js",
+    "test": "grunt test"
+  },
+  "dependencies": {
+    "es6-promisify": "~3.0.0",
+    "moment": "~2.11.2",
+    "morgan": "~1.7.0",
+    "nconf": "~0.8.2",
+    "twilio": "~3.0.0-rc1",
+    "underscore": "~1.8.3",
+    "wundergroundnode": "~0.9.0"
+  },
+  "devDependencies": {
+    "chai": "~3.5.0",
+    "eslint": "~2.2.0",
+    "eslint-plugin-if-in-test": "~0.2.0",
+    "eslint-plugin-promise": "~1.0.8",
+    "eslint-plugin-should-promised": "~1.0.8",
+    "grunt": "~0.4.5",
+    "grunt-cli": "~0.1.13",
+    "grunt-contrib-clean": "~1.0.0",
+    "grunt-eslint": "~18.0.0",
+    "grunt-mocha-istanbul": "~3.0.1",
+    "grunt-mocha-test": "~0.12.7",
+    "istanbul": "^0.4.2",
+    "load-grunt-tasks": "~3.4.0",
+    "mocha": "~2.4.5",
+    "xunit-file": "~0.0.9"
+  }
+}

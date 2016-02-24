@@ -3,6 +3,7 @@ module.exports =
     parserOptions:
     {
         ecmaVersion: 6,
+        sourceType: 'script',
         globalReturn: true,
         impliedStrict: true,
     },
@@ -10,7 +11,6 @@ module.exports =
     {
         es6: true,
         node: true,
-        browser: true,
     },
     extends: 'eslint:recommended',
     plugins:
