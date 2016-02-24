@@ -1,5 +1,4 @@
 var logger = require('./lib/logger');
-var influx = require('influx')({host:'localhost',database:'weather'});
 
 var nconf         = require('nconf');
 nconf.argv().env().file({ file: 'api-keys.json' });
@@ -8,7 +7,7 @@ var twilio = require('twilio')(nconf.get('TWILIO:ACCOUNT_SID'), nconf.get('TWILI
 
 twilio.messages.create({
     to: "+16508514450",
-    from: "+16503326710",
+    from: nconf.get('TWILIO:SENDING_NUMBER'),
     body: "Hi there!  This is a test!",
 })
 .then(function(message)

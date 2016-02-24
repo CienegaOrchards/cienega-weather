@@ -6,23 +6,22 @@
             "folder_exclude_patterns":
             [
                 "node_modules",
-                "public/js/libs",
-                "logs"
+                "test"
             ],
             "follow_symlinks": true,
             "path": "src"
         },
         {
-            "name": "Documentation",
-            "path": "docs"
+            "name": "Tests",
+            "path": "src/test"
         },
         {
-            "name": "Scripts",
-            "path": "misc"
+            "name": "Documentation",
+            "path": "docs"
         }
     ],
     "settings":
     {
-          "search_in_project_TheSilverSearcher_common_options": "--ignore node_modules --ignore public/js/libs --ignore logs"
+          "search_in_project_TheSilverSearcher_common_options": "--ignore node_modules"
     }
 }
