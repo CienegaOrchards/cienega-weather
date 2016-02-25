@@ -36,12 +36,12 @@ function sentSometimeToday(when)
 
 function belowFreezing(forecast)
 {
-    return (forecast.feelslike !== undefined ? forecast.feelslike : forecast) <= 28;
+    return (forecast.feelslike !== undefined ? forecast.feelslike : forecast) <= 45;
 }
 
 function safeTemperature(forecast)
 {
-    return (forecast.feelslike !== undefined ? forecast.feelslike : forecast) >= 30;
+    return (forecast.feelslike !== undefined ? forecast.feelslike : forecast) >= 47;
 }
 
 exports.sendMinimumForecast = function(event, context)
@@ -222,12 +222,17 @@ exports.sendMinimumForecast = function(event, context)
             }),
         ]));
     })
-    .then(function()
+    .then(function(result)
     {
-        context.succeed('Sent!');
+        if(result.nothing)
+        {
+            return context.succeed(result.reason);
+        }
+
+        return context.succeed(result[1].body);
     })
     .catch(function(err)
     {
-        context.fail(err);
+        return context.fail(err);
     });
 };
