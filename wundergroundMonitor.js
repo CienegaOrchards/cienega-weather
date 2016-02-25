@@ -13,7 +13,7 @@ var moment    = require('moment');
 var weather       = new (require('wundergroundnode'))(nconf.get('WUNDERGROUND:API_KEY'));
 var hourlyForecast = weather.hourlyForecast();
 hourlyForecast = promisify(hourlyForecast.request.bind(hourlyForecast));
-const ACTIVE_PWS = nconf.get('WUNDERGROUND:PORTOLA_VALLEY_PWS');
+const ACTIVE_PWS = nconf.get('WUNDERGROUND:RANCH_PWS');
 
 var twilio = require('twilio')(nconf.get('TWILIO:ACCOUNT_SID'), nconf.get('TWILIO:AUTH_TOKEN'));
 
