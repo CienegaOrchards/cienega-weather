@@ -8,12 +8,13 @@ nconf.argv()
 
 var promisify = require('es6-promisify');
 var _         = require('underscore');
-var moment    = require('moment');
+var moment    = require('moment-timezone');
+moment.tz.setDefault('US/Pacific');
 
 var weather       = new (require('wundergroundnode'))(nconf.get('WUNDERGROUND:API_KEY'));
 var hourlyForecast = weather.hourlyForecast();
 hourlyForecast = promisify(hourlyForecast.request.bind(hourlyForecast));
-const ACTIVE_PWS = nconf.get('WUNDERGROUND:PORTOLA_VALLEY_PWS');
+const ACTIVE_PWS = nconf.get('WUNDERGROUND:RANCH_PWS');
 
 var twilio = require('twilio')(nconf.get('TWILIO:ACCOUNT_SID'), nconf.get('TWILIO:AUTH_TOKEN'));
 
@@ -153,7 +154,7 @@ exports.sendMinimumForecast = function(event, context)
         {
             if(sentSometimeToday(last_send_time))
             {
-                return { nothing: true, reason: `No need to send cos already sent at ${last_send_time.format()}` };
+                return { nothing: true, reason: `No need to send cos already sent on ${last_send_time.format('dddd [at] ha')}` };
             }
 
             return { nothing: true, reason: `No need to send since temp is warm (${minForecast.feelslike}ºF at ${minForecast.time.format('dddd [at] ha')})` };
