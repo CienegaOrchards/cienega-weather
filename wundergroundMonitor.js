@@ -153,7 +153,7 @@ exports.sendMinimumForecast = function(event, context)
         {
             if(sentSometimeToday(last_send_time))
             {
-                return { nothing: true, reason: `No need to send cos already sent at ${last_send_time.format()}` };
+                return { nothing: true, reason: `No need to send cos already sent on ${last_send_time.format('dddd [at] ha')}` };
             }
 
             return { nothing: true, reason: `No need to send since temp is warm (${minForecast.feelslike}ºF at ${minForecast.time.format('dddd [at] ha')})` };
