@@ -156,7 +156,7 @@ exports.sendMinimumForecast = function(event, context)
                 return { nothing: true, reason: `No need to send cos already sent at ${last_send_time.format()}` };
             }
 
-            return { nothing: true, reason: `No need to send since temp is warm (${minForecast.feelslike}ºF)` };
+            return { nothing: true, reason: `No need to send since temp is warm (${minForecast.feelslike}ºF at ${minForecast.time.format('dddd [at] ha')})` };
         }
 
         // Save details of send
@@ -226,9 +226,11 @@ exports.sendMinimumForecast = function(event, context)
     {
         if(result.nothing)
         {
+            console.log(result.reason);
             return context.succeed(result.reason);
         }
 
+        console.log(result[1].body);
         return context.succeed(result[1].body);
     })
     .catch(function(err)

@@ -93,6 +93,19 @@ module.exports = function(grunt) {
                     },
                 },
             },
+
+            lambda_invoke:
+            {
+                'default':
+                {
+                    options:
+                    {
+                        file_name: 'wundergroundMonitor_es5.js',
+                        handler: 'sendMinimumForecast',
+                        event: 'test/data/lambda_event.json',
+                    },
+                },
+            },
         });
 
     grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
