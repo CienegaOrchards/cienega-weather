@@ -1,11 +1,12 @@
 {
   "name": "cienega-weather",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "scripts": {
     "wunderground": "node wundergroundMonitor.js",
     "txt": "node txtNotifier.js",
-    "test": "grunt test"
+    "test": "grunt test",
+    "postversion": "git commit -m \"Bump package version to $npm_package_version\" package.json; git flow release start $npm_package_version; git flow release finish -m $npm_package_version $npm_package_version; git checkout develop; git merge master"
   },
   "dependencies": {
     "aws-sdk": "~2.2.38",
