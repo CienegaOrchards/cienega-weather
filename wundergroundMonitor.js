@@ -269,11 +269,11 @@ exports.sendMinimumForecast = function(event, context)
         return Promise.all(
         _.flatten(
         [
-            saveLastSendInfo(),
+            saveLastSendInfo(minForecast, messageBody),
 
             _.map(target_phone_numbers, function(num)
             {
-                console.log('Sending to', num);
+                console.log('Sending to', num, ':', messageBody);
                 return twilio.messages.create(
                 {
                     to: num,
@@ -296,6 +296,7 @@ exports.sendMinimumForecast = function(event, context)
     })
     .catch(function(err)
     {
+        console.error(err.stack);
         return context.fail(err);
     });
 };
