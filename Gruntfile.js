@@ -110,8 +110,9 @@ module.exports = function(grunt) {
 
     grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
     grunt.registerTask('lint', ['eslint']);
-    grunt.registerTask('test', ['lint', 'coverage']);
+    grunt.registerTask('test', ['coverage']);
     grunt.registerTask('deploy', ['clean', 'es6transpiler', 'lambda_package', 'lambda_deploy']);
+    grunt.registerTask('invoke', ['es6transpiler', 'lambda_invoke']);
 
-    grunt.registerTask('default', ['test']);
+    grunt.registerTask('default', ['lint', 'test']);
 };

@@ -30,19 +30,199 @@ var dynamoGetItem = promisify(dynamo.getItem.bind(dynamo));
 var dynamoUpdateItem = promisify(dynamo.updateItem.bind(dynamo));
 
 
-function sentSometimeToday(when)
+exports.sentSometimeRecently = function(when)
 {
-    return moment().diff(when, 'hours', true) <= 12;
+    return moment().diff(when, 'hours', true) <= 18;
+};
+
+var lowTriggerLevel = 32;
+exports.setLowTriggerLevel = function(temp)
+{
+    lowTriggerLevel = temp;
+};
+exports.tempInDangerZone = function(forecast)
+{
+    return (forecast.feelslike !== undefined ? forecast.feelslike : forecast) <= lowTriggerLevel;
+};
+
+var highRecoveryLevel = 34;
+exports.setHighRecoveryLevel = function(temp)
+{
+    highRecoveryLevel = temp;
+};
+exports.tempInSafeZone = function(forecast)
+{
+    return (forecast.feelslike !== undefined ? forecast.feelslike : forecast) >= highRecoveryLevel;
+};
+
+exports.lowestForecastTemp = function(data)
+{
+    return _.chain(data.hourly_forecast) // Process the hourly_forecast data
+            .map(function(hour)          // Extract just the time (as moment object), temp (fahrenheit), and feelslike (fahrenheit) for each hour
+            {
+                var timestamp = moment.unix(parseInt(hour.FCTTIME.epoch));
+                var temp = parseInt(hour.temp.english);
+                var feelslike = parseInt(hour.feelslike.english);
+
+                return {
+                    time: timestamp,
+                    temp: temp,
+                    feelslike: feelslike,
+                };
+            })
+            .min(function(f)
+            {
+                return parseFloat(f.feelslike + f.time.format('.x')); // Find the lowest forecast feelslike and secondary sort by date
+            })
+            .value();
+};
+
+exports.messageForForecast = function(forecast)
+{
+    var msg = `Minimum forecast temp is ${forecast.temp}ºF `;
+    if(forecast.temp !== forecast.feelslike)
+    {
+        msg += `(feels like ${forecast.feelslike}) `;
+    }
+    msg += `${forecast.time.format('dddd [at] ha')}`;
+
+    return msg;
+};
+
+exports.calculateNeedToSend = function(forecast, last_send_info)
+{
+    if(this.tempInDangerZone(forecast))
+    {
+        // Forecast is below freezing, so warn if we didn't already warn today or if last message was SAFE
+        if(!this.sentSometimeRecently(last_send_info.last_send_time) || this.tempInSafeZone(last_send_info.last_send_temp))
+        {
+            return { prefix: 'FROST WARNING: ' };
+        }
+
+        // Check if the forecast min time is SOONER and if so, warn
+        if(last_send_info.last_send_forecast_time.isAfter(forecast.time))
+        {
+            return { prefix: 'EARLIER: ' };
+        }
+
+        // Check if forecast temp is colder than previous warning, and if so, warn
+        if(last_send_info.last_send_temp > forecast.feelslike)
+        {
+            return { prefix: 'COLDER: ' };
+        }
+    }
+
+    // If it's not below freezing now, check if it's now safe
+    if(this.tempInSafeZone(forecast))
+    {
+        // Tonight will be safe; if we had sent a message before warning of low temp, we can now cancel
+        if(this.sentSometimeRecently(last_send_info.last_send_time) && this.tempInDangerZone(last_send_info.last_send_temp))
+        {
+            return { prefix: 'NOW SAFE: ' };
+        }
+    }
+
+    if(!this.tempInSafeZone(last_send_info.last_send_temp) && this.sentSometimeRecently(last_send_info.last_send_time))
+    {
+        return { nothing: true, reason: `No need to send cos already sent on ${last_send_info.last_send_time.format('dddd [at] ha')}` };
+    }
+
+    return { nothing: true, reason: `No need to send since temp is warm (${forecast.feelslike}ºF on ${forecast.time.format('dddd [at] ha')})` };
+};
+
+function getLastSendInfo()
+{
+    return dynamoGetItem(
+    {
+        TableName: 'cienega_weather',
+        Key:
+        {
+            doc_key:
+            {
+                S: 'last_send_info',
+            },
+        },
+    });
 }
 
-function belowFreezing(forecast)
+function getTargetPhoneNumbers()
 {
-    return (forecast.feelslike !== undefined ? forecast.feelslike : forecast) <= 45;
+    return dynamoGetItem(
+    {
+        TableName: 'cienega_weather',
+        Key:
+        {
+            doc_key:
+            {
+                S: 'target_phone_numbers',
+            },
+        },
+    });
 }
 
-function safeTemperature(forecast)
+function getTempThresholds()
 {
-    return (forecast.feelslike !== undefined ? forecast.feelslike : forecast) >= 47;
+    return dynamoGetItem(
+    {
+        TableName: 'cienega_weather',
+        Key:
+        {
+            doc_key:
+            {
+                S: 'threshold_temperatures',
+            },
+        },
+    });
+}
+
+function saveLastSendInfo(forecast, message)
+{
+    return dynamoUpdateItem(
+    {
+        TableName: 'cienega_weather',
+        Key:
+        {
+            doc_key:
+            {
+                S: 'last_send_info',
+            },
+        },
+        AttributeUpdates:
+        {
+            last_send_temp:
+            {
+                Action: 'PUT',
+                Value:
+                {
+                    N: forecast.temp.toString(),
+                },
+            },
+            last_send_time:
+            {
+                Action: 'PUT',
+                Value:
+                {
+                    N: moment().unix().toString(),
+                },
+            },
+            last_send_forecast_time:
+            {
+                Action: 'PUT',
+                Value:
+                {
+                    N: forecast.time.unix().toString(),
+                },
+            },
+            last_send_message:
+            {
+                Action: 'PUT',
+                Value:
+                {
+                    S: message,
+                },
+            },
+        },
+    });
 }
 
 exports.sendMinimumForecast = function(event, context)
@@ -51,165 +231,45 @@ exports.sendMinimumForecast = function(event, context)
     [
         hourlyForecast(ACTIVE_PWS),
 
-        dynamoGetItem(
-        {
-            TableName: 'cienega_weather',
-            Key:
-            {
-                doc_key:
-                {
-                    S: 'last_send_info',
-                },
-            },
-        }),
+        getLastSendInfo(),
 
-        dynamoGetItem(
-        {
-            TableName: 'cienega_weather',
-            Key:
-            {
-                doc_key:
-                {
-                    S: 'target_phone_numbers',
-                },
-            },
-        }),
+        getTargetPhoneNumbers(),
+
+        getTempThresholds(),
     ])
     .then(function(results)
     {
-        var minForecast          = _.chain(results[0].hourly_forecast)
-                                    .map(function(hour)
-                                    {
-                                        var timestamp = moment.unix(parseInt(hour.FCTTIME.epoch));
-                                        var temp = parseInt(hour.temp.english);
-                                        var feelslike = parseInt(hour.feelslike.english);
-
-                                        return {
-                                            time: timestamp,
-                                            temp: temp,
-                                            feelslike: feelslike,
-                                        };
-                                    })
-                                    .filter(function(f)
-                                    {
-                                        return f.time.diff(moment(), 'hours', true) <= 18; // Only look ahead 18 hours
-                                    })
-                                    .min(function(f)
-                                    {
-                                        return f.feelslike; // Find the lowest forecast temperature
-                                    })
-                                    .value();
-        var last_send_info       = _.mapObject(results[1].Item, function(val) { if(val.S) { return val.S; } if(val.N) { return parseInt(val.N); } });
-        var target_phone_numbers = _.map(results[2].Item.phones.L, function(phone) { return phone.S; });
-
-        var messageBody = `Minimum forecast temp is ${minForecast.temp}ºF `;
-        if(minForecast.temp !== minForecast.feelslike)
+        var data = results[0];
+        data.hourly_forecast = _.filter(data.hourly_forecast, function(d)
         {
-            messageBody += `(feels like ${minForecast.feelslike}) `;
-        }
-        messageBody += `${minForecast.time.format('dddd [at] ha')}`;
+            return moment.unix(parseInt(d.FCTTIME.epoch)).diff(moment(), 'hours', true) <= 18;
+        });
+        var minForecast             = exports.lowestForecastTemp(results[0]);
+        var messageBody             = exports.messageForForecast(minForecast);
 
-        var need_to_send = false;
+        var last_send_info          = _.mapObject(results[1].Item, function(val) { if(val.S) { return val.S; } if(val.N) { return parseInt(val.N); } });
+        last_send_info.last_send_time          = moment.unix(last_send_info.last_send_time);
+        last_send_info.last_send_forecast_time = moment.unix(last_send_info.last_send_forecast_time);
 
-        var last_send_time = moment.unix(last_send_info.last_send_time);
-        var last_send_temp = last_send_info.last_send_temp;
-        var last_send_forecast_time = moment.unix(last_send_info.last_send_forecast_time);
+        var target_phone_numbers    = _.map(results[2].Item.phones.L, function(phone) { return phone.S; });
 
-        if(belowFreezing(minForecast))
+        var threshold_temperatures  = _.mapObject(results[3].Item, function(val) { if(val.N) { return parseInt(val.N); } });
+        exports.setLowTriggerLevel(threshold_temperatures.lowTriggerLevel);
+        exports.setHighRecoveryLevel(threshold_temperatures.highRecoveryLevel);
+
+        var needToSend = exports.calculateNeedToSend(minForecast, last_send_info);
+        if(needToSend.nothing)
         {
-            // Forecast is below freezing, so warn if we didn't already warn today
-            if(!sentSometimeToday(last_send_time))
-            {
-                need_to_send = true;
-                messageBody = `FROST WARNING: ${messageBody}`;
-            }
-
-            // We did already send today, so check if the forecast min time is SOONER and if so, warn
-            else if(last_send_forecast_time.isAfter(minForecast.time))
-            {
-                need_to_send = true;
-                messageBody = `EARLIER: ${messageBody}`;
-            }
-
-            // We did already send today, but check if forecast temp is colder
-            else if(last_send_temp > minForecast.temp)
-            {
-                need_to_send = true;
-                messageBody = `COLDER: ${messageBody}`;
-            }
+            return needToSend;
         }
 
-        // If it's not below freezing now, check if it's now safe
-        else if(safeTemperature(minForecast))
-        {
-            // Tonight will be safe; if we had sent a message before warning of low temp, we can now cancel
-            if(sentSometimeToday(last_send_time) && belowFreezing(last_send_temp))
-            {
-                need_to_send = true;
-                messageBody = `NOW SAFE: ${messageBody}`;
-            }
-        }
-
-        if(!need_to_send)
-        {
-            if(sentSometimeToday(last_send_time))
-            {
-                return { nothing: true, reason: `No need to send cos already sent on ${last_send_time.format('dddd [at] ha')}` };
-            }
-
-            return { nothing: true, reason: `No need to send since temp is warm (${minForecast.feelslike}ºF on ${minForecast.time.format('dddd [at] ha')})` };
-        }
-
-        // Save details of send
+        // Prepend any prefix onto the message
+        messageBody = `${needToSend.prefix} ${messageBody}`;
 
         return Promise.all(
-        _.flatten([
-            dynamoUpdateItem(
-            {
-                TableName: 'cienega_weather',
-                Key:
-                {
-                    doc_key:
-                    {
-                        S: 'last_send_info',
-                    },
-                },
-                AttributeUpdates:
-                {
-                    last_send_temp:
-                    {
-                        Action: 'PUT',
-                        Value:
-                        {
-                            N: minForecast.temp.toString(),
-                        },
-                    },
-                    last_send_time:
-                    {
-                        Action: 'PUT',
-                        Value:
-                        {
-                            N: moment().unix().toString(),
-                        },
-                    },
-                    last_send_forecast_time:
-                    {
-                        Action: 'PUT',
-                        Value:
-                        {
-                            N: minForecast.time.unix().toString(),
-                        },
-                    },
-                    last_send_message:
-                    {
-                        Action: 'PUT',
-                        Value:
-                        {
-                            S: messageBody,
-                        },
-                    },
-                },
-            }),
+        _.flatten(
+        [
+            saveLastSendInfo(),
 
             _.map(target_phone_numbers, function(num)
             {
