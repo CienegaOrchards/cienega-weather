@@ -5,17 +5,33 @@ var data = require('./data/weather-sample.json');
 var moment = require('moment-timezone');
 moment.tz.setDefault('US/Pacific');
 
-describe('Check if app knows how long ago things were', function()
+describe('Check calculations for last noon', function()
 {
-    it('should return true for things that were within the last 18 hours', function()
+    var now = moment();
+    if(now.hour() >= 12)
     {
-        main.sentSometimeRecently(moment().subtract(17, 'hours').subtract(59, 'minutes')).should.equal(true);
-    });
-
-    it('should return false for things that are more than 18 hours ago', function()
+        it('Afternoon is after noon', function()
+        {
+            main.sinceLastNoon(now).should.equal(true); // Afternoon is since last noon
+        });
+        it('12 hours before afternoon is before noon', function()
+        {
+            now.subtract(12, 'hours');
+            main.sinceLastNoon(now).should.equal(false); // 12 hours before afternoon is before last noon
+        });
+    }
+    else
     {
-        main.sentSometimeRecently(moment().subtract(18, 'hours').subtract(1, 'minutes')).should.equal(false);
-    });
+        it('Before noon is after previous noon', function()
+        {
+            main.sinceLastNoon(now).should.equal(true); // Before noon is after *previous* noon
+        });
+        it('24 hours before morning is before previous noon', function()
+        {
+            now.subtract(24, 'hours');
+            main.sinceLastNoon(now).should.equal(false); // 24 hours before that was before *previous* noon
+        });
+    }
 });
 
 describe('Check trigger level', function()
@@ -100,11 +116,16 @@ describe('Check message creation', function()
     });
 });
 
-/*
-calculateNeedToSend
-*/
-
-
+describe('Check when next noon is', function()
+{
+    it('should calculate next noon correctly for various datetimes', function()
+    {
+        main.findNextNoon(moment('20160101T11:59:59-0800')).diff(moment('20160101T12:00:00-0800'), 'seconds').should.equal(0);
+        main.findNextNoon(moment('20160101T12:00:00-0800')).diff(moment('20160102T12:00:00-0800'), 'seconds').should.equal(0);
+        main.findNextNoon(moment('20160101T00:00:00-0800')).diff(moment('20160101T12:00:00-0800'), 'seconds').should.equal(0);
+        main.findNextNoon(moment('20160101T23:59:59-0800')).diff(moment('20160102T12:00:00-0800'), 'seconds').should.equal(0);
+    });
+});
 
 describe('Need to send checks', function()
 {

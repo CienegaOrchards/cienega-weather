@@ -29,10 +29,18 @@ var dynamo = new AWS.DynamoDB();
 var dynamoGetItem = promisify(dynamo.getItem.bind(dynamo));
 var dynamoUpdateItem = promisify(dynamo.updateItem.bind(dynamo));
 
-
-exports.sentSometimeRecently = function(when)
+exports.sinceLastNoon = function(when)
 {
-    return moment().diff(when, 'hours', true) <= 18;
+    var todayNoon = moment().startOf('day').add(12, 'hours');
+    if(moment().isAfter(todayNoon))
+    {
+        return when.isAfter(todayNoon);
+    }
+    else
+    {
+        var noonYesterday = moment().startOf('day').subtract(12, 'hours');
+        return when.isAfter(noonYesterday);
+    }
 };
 
 var lowTriggerLevel = 32;
@@ -94,7 +102,7 @@ exports.calculateNeedToSend = function(forecast, last_send_info)
     if(this.tempInDangerZone(forecast))
     {
         // Forecast is below freezing, so warn if we didn't already warn today or if last message was SAFE
-        if(!this.sentSometimeRecently(last_send_info.last_send_time) || this.tempInSafeZone(last_send_info.last_send_temp))
+        if(!this.sinceLastNoon(last_send_info.last_send_time) || this.tempInSafeZone(last_send_info.last_send_temp))
         {
             return { prefix: 'FROST WARNING: ' };
         }
@@ -116,13 +124,13 @@ exports.calculateNeedToSend = function(forecast, last_send_info)
     if(this.tempInSafeZone(forecast))
     {
         // Tonight will be safe; if we had sent a message before warning of low temp, we can now cancel
-        if(this.sentSometimeRecently(last_send_info.last_send_time) && this.tempInDangerZone(last_send_info.last_send_temp))
+        if(this.sinceLastNoon(last_send_info.last_send_time) && this.tempInDangerZone(last_send_info.last_send_temp))
         {
             return { prefix: 'NOW SAFE: ' };
         }
     }
 
-    if(!this.tempInSafeZone(last_send_info.last_send_temp) && this.sentSometimeRecently(last_send_info.last_send_time))
+    if(!this.tempInSafeZone(last_send_info.last_send_temp) && this.sinceLastNoon(last_send_info.last_send_time))
     {
         return { nothing: true, reason: `No need to send cos already sent on ${last_send_info.last_send_time.format('dddd [at] ha')}` };
     }
@@ -225,6 +233,21 @@ function saveLastSendInfo(forecast, message)
     });
 }
 
+exports.findNextNoon = function(time)
+{
+    var nextNoon = time.clone();
+    if(nextNoon.hour() >= 12)
+    {
+        nextNoon.endOf('day').add(12, 'hours');
+    }
+    else
+    {
+        nextNoon.startOf('day').add(12, 'hours');
+    }
+
+    return nextNoon;
+};
+
 exports.sendMinimumForecast = function(event, context)
 {
     Promise.all(
@@ -240,9 +263,10 @@ exports.sendMinimumForecast = function(event, context)
     .then(function(results)
     {
         var data = results[0];
+        var nextNoon = exports.findNextNoon(moment()); // Get forecasts through the next time it's noon
         data.hourly_forecast = _.filter(data.hourly_forecast, function(d)
         {
-            return moment.unix(parseInt(d.FCTTIME.epoch)).diff(moment(), 'hours', true) <= 18;
+            return moment.unix(parseInt(d.FCTTIME.epoch)).isBefore(nextNoon);
         });
         var minForecast             = exports.lowestForecastTemp(results[0]);
         var messageBody             = exports.messageForForecast(minForecast);
