@@ -11,10 +11,10 @@ var _         = require('underscore');
 var moment    = require('moment-timezone');
 moment.tz.setDefault('US/Pacific');
 
-var weather       = new (require('wundergroundnode'))(nconf.get('WUNDERGROUND:API_KEY'));
-var hourlyForecast = weather.hourlyForecast();
-hourlyForecast = promisify(hourlyForecast.request.bind(hourlyForecast));
-const ACTIVE_PWS = nconf.get('WUNDERGROUND:RANCH_PWS');
+var weather        = new (require('wundergroundnode'))(nconf.get('WUNDERGROUND:API_KEY'));
+var hourlyForecast = promisify(weather.conditions().hourlyForecast().request.bind(weather));
+
+const ACTIVE_PWS   = nconf.get('WUNDERGROUND:RANCH_PWS');
 
 var twilio = require('twilio')(nconf.get('TWILIO:ACCOUNT_SID'), nconf.get('TWILIO:AUTH_TOKEN'));
 
@@ -28,6 +28,9 @@ AWS.config.update(
 var dynamo = new AWS.DynamoDB();
 var dynamoGetItem = promisify(dynamo.getItem.bind(dynamo));
 var dynamoUpdateItem = promisify(dynamo.updateItem.bind(dynamo));
+var dynamoPutItem = promisify(dynamo.putItem.bind(dynamo));
+
+var shortid = require('shortid');
 
 exports.sinceLastNoon = function(when)
 {
@@ -233,6 +236,37 @@ function saveLastSendInfo(forecast, message)
     });
 }
 
+function saveTemperaturesToLog(current, forecast)
+{
+    return dynamoPutItem(
+    {
+        TableName: 'weather_log',
+        Item:
+        {
+            _id:
+            {
+                S: shortid.generate(),
+            },
+            timestamp:
+            {
+                N: moment().unix().toString(),
+            },
+            timestring:
+            {
+                S: moment().format('YYYY-MM-DD HH:mm:ss.SSS ZZ'),
+            },
+            current_temp:
+            {
+                N: current.temp.toString(),
+            },
+            forecast_temp:
+            {
+                N: forecast.temp.english.toString(),
+            },
+        },
+    });
+}
+
 exports.findNextNoon = function(time)
 {
     var nextNoon = time.clone();
@@ -252,39 +286,50 @@ exports.sendMinimumForecast = function(event, context)
 {
     Promise.all(
     [
-        hourlyForecast(ACTIVE_PWS),
-
         getLastSendInfo(),
 
         getTargetPhoneNumbers(),
 
         getTempThresholds(),
+
+        hourlyForecast(ACTIVE_PWS),
     ])
     .then(function(results)
     {
-        var data = results[0];
-        var nextNoon = exports.findNextNoon(moment()); // Get forecasts through the next time it's noon
-        data.hourly_forecast = _.filter(data.hourly_forecast, function(d)
-        {
-            return moment.unix(parseInt(d.FCTTIME.epoch)).isBefore(nextNoon);
-        });
-        var minForecast             = exports.lowestForecastTemp(results[0]);
-        var messageBody             = exports.messageForForecast(minForecast);
-
-        var last_send_info          = _.mapObject(results[1].Item, function(val) { if(val.S) { return val.S; } if(val.N) { return parseInt(val.N); } });
+        var last_send_info          = _.mapObject(results[0].Item, function(val) { if(val.S) { return val.S; } if(val.N) { return parseInt(val.N); } });
         last_send_info.last_send_time          = moment.unix(last_send_info.last_send_time);
         last_send_info.last_send_forecast_time = moment.unix(last_send_info.last_send_forecast_time);
 
-        var target_phone_numbers    = _.map(results[2].Item.phones.L, function(phone) { return phone.S; });
+        var target_phone_numbers    = _.map(results[1].Item.phones.L, function(phone) { return phone.S; });
 
-        var threshold_temperatures  = _.mapObject(results[3].Item, function(val) { if(val.N) { return parseInt(val.N); } });
+        var threshold_temperatures  = _.mapObject(results[2].Item, function(val) { if(val.N) { return parseInt(val.N); } });
         exports.setLowTriggerLevel(threshold_temperatures.lowTriggerLevel);
         exports.setHighRecoveryLevel(threshold_temperatures.highRecoveryLevel);
+
+        var forecast = results[3];
+        var nextNoon = exports.findNextNoon(moment()); // Get forecasts through the next time it's noon
+        forecast.hourly_forecast = _.filter(forecast.hourly_forecast, function(d)
+        {
+            return moment.unix(parseInt(d.FCTTIME.epoch)).isBefore(nextNoon);
+        });
+        var minForecast             = exports.lowestForecastTemp(forecast);
+        var messageBody             = exports.messageForForecast(minForecast);
+
+        var current =
+        {
+            temp:      forecast.current_observation.temp_f,
+            feelslike: parseFloat(forecast.current_observation.feelslike_f),
+        };
+        console.log(`Cur: ${current.temp} (${current.feelslike}); Forecast next hour: ${forecast.hourly_forecast[0].temp.english} (${forecast.hourly_forecast[0].feelslike.english})`);
 
         var needToSend = exports.calculateNeedToSend(minForecast, last_send_info);
         if(needToSend.nothing)
         {
-            return needToSend;
+            return Promise.all([
+                needToSend,
+
+                saveTemperaturesToLog(current, forecast.hourly_forecast[0]),
+            ]);
         }
 
         // Prepend any prefix onto the message
@@ -294,6 +339,8 @@ exports.sendMinimumForecast = function(event, context)
         _.flatten(
         [
             saveLastSendInfo(minForecast, messageBody),
+
+            saveTemperaturesToLog(current, forecast.hourly_forecast[0]),
 
             _.map(target_phone_numbers, function(num)
             {
@@ -309,18 +356,18 @@ exports.sendMinimumForecast = function(event, context)
     })
     .then(function(result)
     {
-        if(result.nothing)
+        if(result[0].nothing)
         {
-            console.log(result.reason);
-            return context.succeed(result.reason);
+            console.log(result[0].reason);
+            return context.succeed(result[0].reason);
         }
 
-        console.log(result[1].body);
-        return context.succeed(result[1].body);
+        console.log(result[2].body);
+        return context.succeed(result[2].body);
     })
     .catch(function(err)
     {
-        console.error(err.stack);
+        console.error(err);
         return context.fail(err);
     });
 };
