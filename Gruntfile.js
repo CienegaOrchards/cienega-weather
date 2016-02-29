@@ -86,7 +86,7 @@ module.exports = function(grunt) {
             {
                 'default':
                 {
-                    arn: 'arn:aws:lambda:us-west-2:281650663203:function:sendMinimumForecast',
+                    arn: 'arn:aws:lambda:us-west-2:281650663203:function:sendWeatherWarnings',
                     options:
                     {
                         region: 'us-west-2',
@@ -111,7 +111,8 @@ module.exports = function(grunt) {
     grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
     grunt.registerTask('lint', ['eslint']);
     grunt.registerTask('test', ['coverage']);
-    grunt.registerTask('deploy', ['clean', 'es6transpiler', 'lambda_package', 'lambda_deploy']);
+    grunt.registerTask('package', ['clean', 'es6transpiler', 'lambda_package']);
+    grunt.registerTask('deploy', ['package', 'lambda_deploy']);
     grunt.registerTask('invoke', ['es6transpiler', 'lambda_invoke']);
 
     grunt.registerTask('default', ['lint', 'test']);
