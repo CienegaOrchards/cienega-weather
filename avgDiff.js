@@ -26,9 +26,9 @@ dynamoScan(
 {
     TableName: 'weather_log',
 })
-.then(function(results)
+.then(function(weather_data)
 {
-    results = _.chain(results.Items)
+    let results = _.chain(weather_data.Items)
     .map(function(result)
     {
         let temp = parseFloat(result.current_temp.N);
@@ -93,10 +93,10 @@ dynamoScan(
 .then(function(results)
 {
     console.log(results);
-    process.exit(0);
+    return process.exit(0);
 })
 .catch(function(err)
 {
     console.error(err, err.stack);
-    process.exit(1);
+    return process.exit(1);
 });
