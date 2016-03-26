@@ -263,6 +263,10 @@ function saveTemperaturesToLog(current, forecast)
             {
                 N: forecast.temp.english.toString(),
             },
+            adjusted_estimate:
+            {
+                N: forecast.adjusted_estimate.toString(),
+            },
         },
     });
 }
@@ -320,7 +324,10 @@ exports.sendMinimumForecast = function(event, context)
             temp:      forecast.current_observation.temp_f,
             feelslike: parseFloat(forecast.current_observation.feelslike_f),
         };
+        // This formula below is estimate correction based on observations from 2016-02-28 through 2016-03-25 using avgDiff.js
+        forecast.hourly_forecast[0].adjusted_estimate = 70.808 * Math.log(forecast.hourly_forecast[0].temp.english) - 227.73;
         console.log(`Cur: ${current.temp} (${current.feelslike}); Forecast next hour: ${forecast.hourly_forecast[0].temp.english} (${forecast.hourly_forecast[0].feelslike.english})`);
+        console.log(`Adjusted estimate: ${forecast.hourly_forecast[0].adjusted_estimate}`);
 
         var needToSend = exports.calculateNeedToSend(minForecast, last_send_info);
         if(needToSend.nothing)
