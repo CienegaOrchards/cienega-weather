@@ -32,6 +32,11 @@ var dynamoPutItem = promisify(dynamo.putItem.bind(dynamo));
 
 var shortid = require('shortid');
 
+function adjustForecast(forecast_temp)
+{
+    return Math.round(712.94 * Math.log(forecast_temp) - 2297.9) / 10; // Round to 1 d.p.
+}
+
 exports.sinceLastNoon = function(when)
 {
     var todayNoon = moment().startOf('day').add(12, 'hours');
@@ -53,7 +58,7 @@ exports.setLowTriggerLevel = function(temp)
 };
 exports.tempInDangerZone = function(forecast)
 {
-    return (forecast.feelslike !== undefined ? forecast.feelslike : forecast) <= lowTriggerLevel;
+    return (forecast.feelslike !== undefined ? adjustForecast(forecast.feelslike) : adjustForecast(forecast)) <= lowTriggerLevel;
 };
 
 var highRecoveryLevel = 34;
@@ -63,7 +68,7 @@ exports.setHighRecoveryLevel = function(temp)
 };
 exports.tempInSafeZone = function(forecast)
 {
-    return (forecast.feelslike !== undefined ? forecast.feelslike : forecast) >= highRecoveryLevel;
+    return (forecast.feelslike !== undefined ? adjustForecast(forecast.feelslike) : adjustForecast(forecast)) >= highRecoveryLevel;
 };
 
 exports.lowestForecastTemp = function(data)
@@ -90,10 +95,10 @@ exports.lowestForecastTemp = function(data)
 
 exports.messageForForecast = function(forecast)
 {
-    var msg = `Minimum forecast temp is ${forecast.temp}ºF `;
+    var msg = `Minimum forecast temp is ${adjustForecast(forecast.temp)}ºF `;
     if(forecast.temp !== forecast.feelslike)
     {
-        msg += `(feels like ${forecast.feelslike}) `;
+        msg += `(feels like ${adjustForecast(forecast.feelslike)}) `;
     }
     msg += `${forecast.time.format('dddd [at] ha')}`;
 
@@ -138,7 +143,7 @@ exports.calculateNeedToSend = function(forecast, last_send_info)
         return { nothing: true, reason: `No need to send cos already sent on ${last_send_info.last_send_time.format('dddd [at] ha')}` };
     }
 
-    return { nothing: true, reason: `No need to send since temp is warm (${forecast.feelslike}ºF on ${forecast.time.format('dddd [at] ha')})` };
+    return { nothing: true, reason: `No need to send since temp is warm (${forecast.feelslike}ºF/${adjustForecast(forecast.feelslike)}ºF adjusted} on ${forecast.time.format('dddd [at] ha')})` };
 };
 
 function getLastSendInfo()
@@ -324,10 +329,9 @@ exports.sendMinimumForecast = function(event, context)
             temp:      forecast.current_observation.temp_f,
             feelslike: parseFloat(forecast.current_observation.feelslike_f),
         };
-        // This formula below is estimate correction based on observations from 2016-02-28 through 2016-03-25 using avgDiff.js
-        forecast.hourly_forecast[0].adjusted_estimate = 70.808 * Math.log(forecast.hourly_forecast[0].temp.english) - 227.73;
-        console.log(`Cur: ${current.temp} (${current.feelslike}); Forecast next hour: ${forecast.hourly_forecast[0].temp.english} (${forecast.hourly_forecast[0].feelslike.english})`);
-        console.log(`Adjusted estimate: ${forecast.hourly_forecast[0].adjusted_estimate}`);
+        // This formula below is estimate correction based on observations from 2016-02-28 through 2016-03-29 using avgDiff.js
+        forecast.hourly_forecast[0].adjusted_estimate = adjustForecast(forecast.hourly_forecast[0].temp.english);
+        console.log(`Cur: ${current.temp} (${current.feelslike}); Forecast next hour: ${forecast.hourly_forecast[0].temp.english} (${forecast.hourly_forecast[0].feelslike.english}); Adjusted: ${forecast.hourly_forecast[0].adjusted_estimate}`);
 
         var needToSend = exports.calculateNeedToSend(minForecast, last_send_info);
         if(needToSend.nothing)
