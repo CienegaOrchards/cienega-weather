@@ -38,23 +38,23 @@ describe('Check trigger level', function()
 {
     it('should use defaults if setting not explicit', function()
     {
-        main.tempInDangerZone({ feelslike: 31 }).should.equal(true);
-        main.tempInDangerZone({ feelslike: 32 }).should.equal(true);
-        main.tempInDangerZone({ feelslike: 33 }).should.equal(false);
+        main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(31) }).should.equal(true);
+        main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(32) }).should.equal(true);
+        main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(33) }).should.equal(false);
     });
 
     it('should work with temp not wrapped in object', function()
     {
-        main.tempInDangerZone(31).should.equal(true);
-        main.tempInDangerZone(33).should.equal(false);
+        main.tempInDangerZone(main.reverseForecastAdjustment(31)).should.equal(true);
+        main.tempInDangerZone(main.reverseForecastAdjustment(33)).should.equal(false);
     });
 
     it('should respond to trigger level being set', function()
     {
         main.setLowTriggerLevel(40);
-        main.tempInDangerZone({ feelslike: 39 }).should.equal(true);
-        main.tempInDangerZone({ feelslike: 40 }).should.equal(true);
-        main.tempInDangerZone({ feelslike: 41 }).should.equal(false);
+        main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(39) }).should.equal(true);
+        main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(40) }).should.equal(true);
+        main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(41) }).should.equal(false);
     });
 });
 
@@ -62,23 +62,23 @@ describe('Check reset level', function()
 {
     it('should use defaults if setting not explicit', function()
     {
-        main.tempInSafeZone({ feelslike: 35 }).should.equal(true);
-        main.tempInSafeZone({ feelslike: 34 }).should.equal(true);
-        main.tempInSafeZone({ feelslike: 33 }).should.equal(false);
+        main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(35) }).should.equal(true);
+        main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(34) }).should.equal(true);
+        main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(33) }).should.equal(false);
     });
 
     it('should work with temp not wrapped in object', function()
     {
-        main.tempInSafeZone(35).should.equal(true);
-        main.tempInSafeZone(33).should.equal(false);
+        main.tempInSafeZone(main.reverseForecastAdjustment(35)).should.equal(true);
+        main.tempInSafeZone(main.reverseForecastAdjustment(33)).should.equal(false);
     });
 
     it('should respond to recovery level being set', function()
     {
         main.setHighRecoveryLevel(40);
-        main.tempInSafeZone({ feelslike: 41 }).should.equal(true);
-        main.tempInSafeZone({ feelslike: 40 }).should.equal(true);
-        main.tempInSafeZone({ feelslike: 39 }).should.equal(false);
+        main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(41) }).should.equal(true);
+        main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(40) }).should.equal(true);
+        main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(39) }).should.equal(false);
     });
 });
 
@@ -99,8 +99,8 @@ describe('Check message creation', function()
     {
         main.messageForForecast(
         {
-            temp: 32,
-            feelslike: 32,
+            temp: main.reverseForecastAdjustment(32),
+            feelslike: main.reverseForecastAdjustment(32),
             time: moment('2016-02-26T06:00:00-0800'),
         }).should.equal('Minimum forecast temp is 32ºF Friday at 6am');
     });
@@ -109,8 +109,8 @@ describe('Check message creation', function()
     {
         main.messageForForecast(
         {
-            temp: 32,
-            feelslike: 30,
+            temp: main.reverseForecastAdjustment(32),
+            feelslike: main.reverseForecastAdjustment(30),
             time: moment('2016-02-26T06:00:00-0800'),
         }).should.equal('Minimum forecast temp is 32ºF (feels like 30) Friday at 6am');
     });
@@ -252,7 +252,7 @@ describe('Need to send checks', function()
         result.should.not.have.property('prefix');
         result.should.have.property('nothing');
         result.nothing.should.equal(true);
-        result.reason.should.equal(`No need to send since temp is warm (50ºF on ${warmForecast.time.format('dddd')} at ${warmForecast.time.format('ha')})`);
+        result.reason.should.equal(`No need to send since temp is warm (50ºF/49ºF adjusted on ${warmForecast.time.format('dddd')} at ${warmForecast.time.format('ha')})`);
     });
 
     it('should not send if tonight will be warm and sent warm recently', function()
@@ -261,7 +261,7 @@ describe('Need to send checks', function()
         result.should.not.have.property('prefix');
         result.should.have.property('nothing');
         result.nothing.should.equal(true);
-        result.reason.should.equal(`No need to send since temp is warm (50ºF on ${warmForecast.time.format('dddd')} at ${warmForecast.time.format('ha')})`);
+        result.reason.should.equal(`No need to send since temp is warm (50ºF/49ºF adjusted on ${warmForecast.time.format('dddd')} at ${warmForecast.time.format('ha')})`);
     });
 
     it('should not send if tonight will be cold and sent cold recently', function()
