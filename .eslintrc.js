@@ -19,8 +19,8 @@ module.exports =
     ],
     rules:
     {
-        'promise/always-catch':     1,
-        'promise/always-return':    1,
+        'promise/always-catch':        1,
+        'promise/always-return':       1,
         'array-bracket-spacing':       [ 1, "never", { arraysInArrays: false, objectsInArrays: false } ],
         'block-scoped-var':            2,
         'block-spacing':               [ 1, 'always' ],
@@ -51,7 +51,7 @@ module.exports =
         'no-fallthrough':              1,
         'no-loop-func':                2,
         'no-nested-ternary':           2,
-        'no-param-reassign':        [ 1, { props: false } ],
+        'no-param-reassign':           [ 1, { props: false } ],
         'no-redeclare':                [ 2, { builtinGlobals: true } ],
         'no-return-assign':            [ 2, 'always' ],
         'no-self-compare':             2,
