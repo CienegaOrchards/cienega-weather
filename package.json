@@ -2,13 +2,48 @@
   "name": "cienega-weather",
   "version": "1.8.1",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/CienegaOrchards/cienega-weather.git"
+  },
   "scripts": {
-    "wunderground": "node wundergroundMonitor.js",
-    "txt": "node txtNotifier.js",
+    "preversion": "grunt test",
+    "postversion": "git commit -m \"Bump package version to $npm_package_version\" package.json; git flow release start $npm_package_version; git flow release finish -m $npm_package_version $npm_package_version; git checkout develop; git merge master",
     "test": "grunt test",
-    "postversion": "git commit -m \"Bump package version to $npm_package_version\" package.json; git flow release start $npm_package_version; git flow release finish -m $npm_package_version $npm_package_version; git checkout develop; git merge master"
+    "start": "grunt invoke"
+  },
+  "author": "Craig Hughes <craig.npm@rungie.com> (https://npmjs.org/~hughescr)",
+  "license": "BSD-3-Clause",
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "@hughescr/eslint-config-flow": "^1.0.1",
+    "babel-cli": "^6.10.1",
+    "babel-eslint": "^6.1.2",
+    "babel-plugin-transform-flow-strip-types": "^6.8.0",
+    "babel-preset-es2015": "^6.9.0",
+    "chai": "^3.5.0",
+    "chai-as-promised": "^5.3.0",
+    "chai-datetime": "^1.4.1",
+    "eslint": "^3.0.1",
+    "eslint-plugin-flowtype": "^2.3.0",
+    "eslint-plugin-if-in-test": "^0.2.0",
+    "eslint-plugin-promise": "^1.3.2",
+    "eslint-plugin-should-promised": "^1.0.8",
+    "grunt": "^1.0.1",
+    "grunt-aws-lambda": "^0.13.0",
+    "grunt-babel": "^6.0.0",
+    "grunt-cli": "^1.2.0",
+    "grunt-contrib-clean": "^1.0.0",
+    "grunt-eslint": "^19.0.0",
+    "grunt-flow": "^1.0.3",
+    "grunt-mocha-istanbul": "^5.0.1",
+    "grunt-mocha-test": "^0.12.7",
+    "istanbul": "^0.4.4",
+    "load-grunt-tasks": "^3.5.0",
+    "mocha": "^2.5.3"
   },
   "dependencies": {
+    "@hughescr/logger": "^2.0.5",
     "aws-sdk": "~2.2.38",
     "es6-promisify": "~3.0.0",
     "json2csv": "~3.2.0",
@@ -20,24 +55,5 @@
     "twilio": "~2.9.0",
     "underscore": "~1.8.3",
     "wundergroundnode": "~0.9.0"
-  },
-  "devDependencies": {
-    "chai": "~3.5.0",
-    "eslint": "~2.5.3",
-    "eslint-plugin-if-in-test": "~0.2.0",
-    "eslint-plugin-promise": "~1.1.0",
-    "eslint-plugin-should-promised": "~1.0.8",
-    "grunt": "~0.4.5",
-    "grunt-aws-lambda": "~0.12.0",
-    "grunt-cli": "~1.1.0",
-    "grunt-contrib-clean": "~1.0.0",
-    "grunt-es6-transpiler": "~1.0.2",
-    "grunt-eslint": "~18.0.0",
-    "grunt-mocha-istanbul": "~3.0.1",
-    "grunt-mocha-test": "~0.12.7",
-    "istanbul": "~0.4.2",
-    "load-grunt-tasks": "~3.4.0",
-    "mocha": "~2.4.5",
-    "xunit-file": "~0.0.9"
   }
 }

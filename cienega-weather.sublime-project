@@ -2,31 +2,33 @@
     "folders":
     [
         {
-            "name": "Source",
+            "name": "Base",
             "path": ".",
             "folder_exclude_patterns":
             [
                 "node_modules",
-                "test",
+				"build",
                 "docs",
-                "coverage"
-            ],
+                "src",
+                "test"
+            ]
+        },
+        {
+            "name": "Source",
+            "path": "src"
         },
         {
             "name": "Tests",
             "path": "test"
         },
         {
-            "name": "Coverage",
-            "path": "coverage"
-        },
-        {
-            "name": "Documentation",
+            "name": "Docs",
             "path": "docs"
-        },
+        }
     ],
     "settings":
     {
-          "search_in_project_TheSilverSearcher_common_options": "--ignore node_modules"
+          "search_in_project_TheSilverSearcher_common_options": "--ignore coverage --ignore node_modules --ignore *.sublime-workspace --ignore *.sublime-project",
+          "search_in_project_ThePlatinumSearcher_common_options": "--ignore coverage --ignore node_modules --ignore *.sublime-workspace --ignore *.sublime-project"
     }
 }
