@@ -41,7 +41,7 @@ module.exports = function (grunt) {
             'default': {
                 'options': {
                     'file_name': 'build/index.js',
-                    'handler': 'handler',
+                    'handler': 'sendMinimumForecast',
                     'event': 'test/data/lambda-event.json'
                 }
             }
