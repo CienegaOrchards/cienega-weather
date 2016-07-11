@@ -118,4 +118,6 @@ build
 
 # Ignore api-keys.json which contains secrets
 api-keys.json
+
+# Yeoman config settings (which might include access keys)
 .yo-rc.json

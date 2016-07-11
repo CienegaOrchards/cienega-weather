@@ -105,6 +105,8 @@ docs/*.png
 
 # Enviroment files which may contain keys and secrets
 .env
+.yo-rc.json
+api-keys.json
 
 # Test artifacts
 xunit.xml
@@ -117,9 +119,7 @@ coverage
 .flowconfig
 .gitignore
 .npmignore
-.yo-rc.json
 Gruntfile.js
 *.sublime-project
 src
 test
-.yo-rc.json

@@ -1,7 +1,10 @@
-module.exports = {
+'use strict';
+
+module.exports =
+{
     env:
     {
-        es6: true,
+        es6:   true,
         mocha: true,
     },
     plugins:
@@ -11,7 +14,7 @@ module.exports = {
     ],
     rules:
     {
-        'if-in-test/if':                  [ 1, { directory: 'test' }],
-        'should-promised/return-promise': 2,
-    }
+        'if-in-test/if':                  ['warn', { directory: 'test' }],
+        'should-promised/return-promise': 'error',
+    },
 };
