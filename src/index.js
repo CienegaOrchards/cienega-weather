@@ -114,8 +114,6 @@ exports.calculateNeedToSend = function(forecast, last_send_info)
         // Forecast is below freezing, so warn if we didn't already warn today or if last message was SAFE
         if(!this.sinceLastNoon(last_send_info.last_send_time) || this.tempInSafeZone(last_send_info.last_send_temp))
         {
-            logger.debug(!this.sinceLastNoon(last_send_info.last_send_time));
-            logger.debug(this.tempInSafeZone(last_send_info.last_send_temp));
             return { prefix: 'FROST WARNING: ' };
         }
 
