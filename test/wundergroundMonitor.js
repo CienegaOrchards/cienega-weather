@@ -1,20 +1,22 @@
+'use strict';
+
 require('chai').should();
 
-var main = require('../wundergroundMonitor.js');
-var data = require('./data/weather-sample.json');
-var moment = require('moment-timezone');
+const main = require('../src/index.js');
+const data = require('./data/weather-sample.json');
+const moment = require('moment-timezone');
 moment.tz.setDefault('US/Pacific');
 
-describe('Check calculations for last noon', function()
+describe('Check calculations for last noon', () =>
 {
-    var now = moment();
+    const now = moment();
     if(now.hour() >= 12)
     {
-        it('Afternoon is after noon', function()
+        it('Afternoon is after noon', () =>
         {
             main.sinceLastNoon(now).should.equal(true); // Afternoon is since last noon
         });
-        it('12 hours before afternoon is before noon', function()
+        it('12 hours before afternoon is before noon', () =>
         {
             now.subtract(12, 'hours');
             main.sinceLastNoon(now).should.equal(false); // 12 hours before afternoon is before last noon
@@ -22,11 +24,11 @@ describe('Check calculations for last noon', function()
     }
     else
     {
-        it('Before noon is after previous noon', function()
+        it('Before noon is after previous noon', () =>
         {
             main.sinceLastNoon(now).should.equal(true); // Before noon is after *previous* noon
         });
-        it('24 hours before morning is before previous noon', function()
+        it('24 hours before morning is before previous noon', () =>
         {
             now.subtract(24, 'hours');
             main.sinceLastNoon(now).should.equal(false); // 24 hours before that was before *previous* noon
@@ -34,22 +36,22 @@ describe('Check calculations for last noon', function()
     }
 });
 
-describe('Check trigger level', function()
+describe('Check trigger level', () =>
 {
-    it('should use defaults if setting not explicit', function()
+    it('should use defaults if setting not explicit', () =>
     {
         main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(31) }).should.equal(true);
         main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(32) }).should.equal(true);
         main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(33) }).should.equal(false);
     });
 
-    it('should work with temp not wrapped in object', function()
+    it('should work with temp not wrapped in object', () =>
     {
         main.tempInDangerZone(main.reverseForecastAdjustment(31)).should.equal(true);
         main.tempInDangerZone(main.reverseForecastAdjustment(33)).should.equal(false);
     });
 
-    it('should respond to trigger level being set', function()
+    it('should respond to trigger level being set', () =>
     {
         main.setLowTriggerLevel(40);
         main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(39) }).should.equal(true);
@@ -58,22 +60,22 @@ describe('Check trigger level', function()
     });
 });
 
-describe('Check reset level', function()
+describe('Check reset level', () =>
 {
-    it('should use defaults if setting not explicit', function()
+    it('should use defaults if setting not explicit', () =>
     {
         main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(35) }).should.equal(true);
         main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(34) }).should.equal(true);
         main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(33) }).should.equal(false);
     });
 
-    it('should work with temp not wrapped in object', function()
+    it('should work with temp not wrapped in object', () =>
     {
         main.tempInSafeZone(main.reverseForecastAdjustment(35)).should.equal(true);
         main.tempInSafeZone(main.reverseForecastAdjustment(33)).should.equal(false);
     });
 
-    it('should respond to recovery level being set', function()
+    it('should respond to recovery level being set', () =>
     {
         main.setHighRecoveryLevel(40);
         main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(41) }).should.equal(true);
@@ -82,20 +84,20 @@ describe('Check reset level', function()
     });
 });
 
-describe('Find lowest forecast temperature', function()
+describe('Find lowest forecast temperature', () =>
 {
-    it('should correctly find lowest temp', function()
+    it('should correctly find lowest temp', () =>
     {
-        var minForecast = main.lowestForecastTemp(data);
+        const minForecast = main.lowestForecastTemp(data);
         minForecast.time.diff(moment('2016-02-24T06:00:00-08:00'), 'seconds', true).should.equal(0);
         minForecast.temp.should.equal(46);
         minForecast.feelslike.should.equal(46);
     });
 });
 
-describe('Check message creation', function()
+describe('Check message creation', () =>
 {
-    it('should generate correct message when temps same', function()
+    it('should generate correct message when temps same', () =>
     {
         main.messageForForecast(
         {
@@ -105,7 +107,7 @@ describe('Check message creation', function()
         }).should.equal('Minimum forecast temp is 32ºF Friday at 6am');
     });
 
-    it('should generate correct message when temps differ', function()
+    it('should generate correct message when temps differ', () =>
     {
         main.messageForForecast(
         {
@@ -116,9 +118,9 @@ describe('Check message creation', function()
     });
 });
 
-describe('Check when next noon is', function()
+describe('Check when next noon is', () =>
 {
-    it('should calculate next noon correctly for various datetimes', function()
+    it('should calculate next noon correctly for various datetimes', () =>
     {
         main.findNextNoon(moment('20160101T11:59:59-0800')).diff(moment('20160101T12:00:00-0800'), 'seconds').should.equal(0);
         main.findNextNoon(moment('20160101T12:00:00-0800')).diff(moment('20160102T12:00:00-0800'), 'seconds').should.equal(0);
@@ -127,116 +129,117 @@ describe('Check when next noon is', function()
     });
 });
 
-describe('Need to send checks', function()
+describe('Need to send checks', () =>
 {
-    var _4HoursAgo = moment().subtract(4, 'hours');
-    var _4HoursHence = moment().add(4, 'hours');
-    var _6HoursHence = moment().add(6, 'hours');
-    var _44HoursAgo = moment().subtract(44, 'hours');
-    var _48HoursAgo = moment().subtract(48, 'hours');
-    var _2HoursHence = moment().add(2, 'hours');
+    const _2PMToday = moment().hour(14).minute(0).seconds(0);
+    const _8PMToday = moment().hour(20).minute(0).seconds(0);
+    const _10PMToday = moment().hour(22).minute(0).seconds(0);
+    const _11PMToday = moment().hour(23).minute(0).seconds(0);
 
-    var coldForecast =
+    const _44HoursAgo = moment().subtract(44, 'hours');
+    const _48HoursAgo = moment().subtract(48, 'hours');
+
+    const coldForecast =
     {
         temp: 28,
         feelslike: 28,
-        time: _4HoursHence,
+        time: _10PMToday,
     };
 
-    var warmForecast =
+    const warmForecast =
     {
         temp: 50,
         feelslike: 50,
-        time: _4HoursHence,
+        time: _10PMToday,
     };
 
-    var coldEarlyForecast =
+    const coldEarlyForecast =
     {
         temp: 28,
         feelslike: 28,
-        time: _2HoursHence,
+        time: _8PMToday,
     };
 
-    var colderForecast =
+    const colderForecast =
     {
         temp: 24,
         feelslike: 24,
-        time: _4HoursHence,
+        time: _10PMToday,
     };
 
-    var colderForecastLater =
+    const colderForecastLater =
     {
         temp: 24,
         feelslike: 24,
-        time: _6HoursHence,
+        time: _11PMToday,
     };
 
-    var sent4HoursAgo =
+    const sent2PMEarlier =
     {
-        last_send_time: _4HoursAgo,
+        last_send_time: _2PMToday,
         last_send_temp: 28,
-        last_send_forecast_time: _4HoursHence,
+        last_send_forecast_time: _10PMToday,
     };
 
-    var sentWarm4HoursAgo =
+    const sentWarm2PMEarlier =
     {
-        last_send_time: _4HoursAgo,
+        last_send_time: _2PMToday,
         last_send_temp: 50,
-        last_send_forecast_time: _4HoursHence,
+        last_send_forecast_time: _10PMToday,
     };
 
-    var sent48HoursAgo =
+    const sent48HoursAgo =
     {
         last_send_time: _48HoursAgo,
         last_send_temp: 28,
         last_send_forecast_time: _44HoursAgo,
     };
 
-    it('should send if tonight will be cold and last message a while back', function()
+    it('should send if tonight will be cold and last message a while back', () =>
     {
-        var result = main.calculateNeedToSend(coldForecast, sent48HoursAgo);
+        const result = main.calculateNeedToSend(coldForecast, sent48HoursAgo);
         result.should.have.property('prefix');
         result.prefix.should.equal('FROST WARNING: ');
     });
 
-    it('should send if tonight will be cold and last message recent and warm', function()
+    it('should send if tonight will be cold and last message recent and warm', () =>
     {
-        var result = main.calculateNeedToSend(coldForecast, sentWarm4HoursAgo);
+        const result = main.calculateNeedToSend(coldForecast, sentWarm2PMEarlier);
         result.should.have.property('prefix');
         result.prefix.should.equal('FROST WARNING: ');
     });
 
-    it('should send if tonight will be cold earlier and last message recent', function()
+    it('should send if tonight will be cold earlier and last message recent', () =>
     {
-        var result = main.calculateNeedToSend(coldEarlyForecast, sent4HoursAgo);
+        const result = main.calculateNeedToSend(coldEarlyForecast, sent2PMEarlier);
         result.should.have.property('prefix');
         result.prefix.should.equal('EARLIER: ');
     });
 
-    it('should send if tonight will be colder and last message recent', function()
+    it('should send if tonight will be colder and last message recent', () =>
     {
-        var result = main.calculateNeedToSend(colderForecast, sent4HoursAgo);
+        const result = main.calculateNeedToSend(colderForecast, sent2PMEarlier);
         result.should.have.property('prefix');
         result.prefix.should.equal('COLDER: ');
     });
 
-    it('should send if tonight will be colder later and last message recent', function()
+    it('should send if tonight will be colder later and last message recent', () =>
     {
-        var result = main.calculateNeedToSend(colderForecastLater, sent4HoursAgo);
+        const result = main.calculateNeedToSend(colderForecastLater, sent2PMEarlier);
         result.should.have.property('prefix');
         result.prefix.should.equal('COLDER: ');
     });
 
-    it('should send if tonight will be warm and last message recent and cold', function()
+    it('should send if tonight will be warm and last message recent and cold', () =>
     {
-        var result = main.calculateNeedToSend(warmForecast, sent4HoursAgo);
+        const result = main.calculateNeedToSend(warmForecast, sent2PMEarlier);
         result.should.have.property('prefix');
         result.prefix.should.equal('NOW SAFE: ');
     });
 
-    it('should not send if tonight will be cold but already sent', function()
+    it('should not send if tonight will be cold but already sent', () =>
     {
-        var result = main.calculateNeedToSend(coldForecast, sent4HoursAgo);
+        const result = main.calculateNeedToSend(coldForecast, sent2PMEarlier);
         result.should.not.have.property('prefix');
         result.should.have.property('nothing');
         result.nothing.should.equal(true);
@@ -246,30 +249,30 @@ describe('Need to send checks', function()
            .should.not.equal(null);
     });
 
-    it('should not send if tonight will be warm and sent long ago', function()
+    it('should not send if tonight will be warm and sent long ago', () =>
     {
-        var result = main.calculateNeedToSend(warmForecast, sent48HoursAgo);
+        const result = main.calculateNeedToSend(warmForecast, sent48HoursAgo);
         result.should.not.have.property('prefix');
         result.should.have.property('nothing');
         result.nothing.should.equal(true);
         result.reason.should.equal(`No need to send since temp is warm (50ºF/49ºF adjusted on ${warmForecast.time.format('dddd')} at ${warmForecast.time.format('ha')})`);
     });
 
-    it('should not send if tonight will be warm and sent warm recently', function()
+    it('should not send if tonight will be warm and sent warm recently', () =>
     {
-        var result = main.calculateNeedToSend(warmForecast, sentWarm4HoursAgo);
+        const result = main.calculateNeedToSend(warmForecast, sentWarm2PMEarlier);
         result.should.not.have.property('prefix');
         result.should.have.property('nothing');
         result.nothing.should.equal(true);
         result.reason.should.equal(`No need to send since temp is warm (50ºF/49ºF adjusted on ${warmForecast.time.format('dddd')} at ${warmForecast.time.format('ha')})`);
     });
 
-    it('should not send if tonight will be cold and sent cold recently', function()
+    it('should not send if tonight will be cold and sent cold recently', () =>
     {
-        var result = main.calculateNeedToSend(coldForecast, sent4HoursAgo);
+        const result = main.calculateNeedToSend(coldForecast, sent2PMEarlier);
         result.should.not.have.property('prefix');
         result.should.have.property('nothing');
         result.nothing.should.equal(true);
-        result.reason.should.equal(`No need to send cos already sent on ${sent4HoursAgo.last_send_time.format('dddd')} at ${sent4HoursAgo.last_send_time.format('ha')}`);
+        result.reason.should.equal(`No need to send cos already sent on ${sent2PMEarlier.last_send_time.format('dddd')} at ${sent2PMEarlier.last_send_time.format('ha')}`);
     });
 });

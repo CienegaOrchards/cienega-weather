@@ -1,38 +1,38 @@
 'use strict';
 
-require('./lib/logger');
-var nconf     = require('nconf');
+const logger = require('@hughescr/logger');
+const nconf     = require('nconf');
 nconf.argv()
      .env()
      .file({ file: 'api-keys.json' });
 
-var promisify = require('es6-promisify');
-var _         = require('underscore');
-var moment    = require('moment-timezone');
+const promisify = require('es6-promisify');
+const _         = require('underscore');
+const moment    = require('moment-timezone');
 moment.tz.setDefault('US/Pacific');
-var json2csv  = promisify(require('json2csv'));
+const json2csv  = promisify(require('json2csv'));
 
-var AWS = require('aws-sdk');
+const AWS = require('aws-sdk');
 AWS.config.update(
 {
     accessKeyId:     nconf.get('AWS:ACCESS_KEY_ID'),
     secretAccessKey: nconf.get('AWS:SECRET_ACCESS_KEY'),
     region:          nconf.get('AWS:DYNAMO_ENDPOINT'),
 });
-var dynamo = new AWS.DynamoDB();
-var dynamoScan = promisify(dynamo.scan.bind(dynamo));
+const dynamo = new AWS.DynamoDB();
+const dynamoScan = promisify(dynamo.scan.bind(dynamo));
 
 dynamoScan(
 {
     TableName: 'weather_log',
 })
-.then(function(weather_data)
+.then(weather_data =>
 {
     let results = _.chain(weather_data.Items)
-    .map(function(result)
+    .map(result =>
     {
-        let temp = parseFloat(result.current_temp.N);
-        let forecast = parseFloat(result.forecast_temp.N);
+        const temp = parseFloat(result.current_temp.N);
+        const forecast = parseFloat(result.forecast_temp.N);
         return {
             time:     parseInt(result.timestamp.N),
             forecast: forecast,
@@ -42,16 +42,16 @@ dynamoScan(
     .sortBy('time')
     .value();
 
-    console.log(`Earliest: ${moment.unix(results[0].time).format()}; Last: ${moment.unix(results[results.length - 1].time).format()}`);
+    logger.info(`Earliest: ${moment.unix(results[0].time).format()}; Last: ${moment.unix(results[results.length - 1].time).format()}`);
 
     results = _.chain(results)
-    .map(function(result)
+    .map(result =>
     {
-        let myTime = moment.unix(result.time);
-        let actual = _.chain(results)
-        .find(function(r2)
+        const myTime = moment.unix(result.time);
+        const actual = _.chain(results)
+        .find(r2 =>
         {
-            var hourDiff = moment.unix(r2.time).diff(myTime, 'hours', true);
+            const hourDiff = moment.unix(r2.time).diff(myTime, 'hours', true);
             if(hourDiff >= 0.4 && hourDiff <= 1.6) { return true; }
             return false;
         })
@@ -65,16 +65,16 @@ dynamoScan(
 
         return result;
     })
-    .filter(function(r) { return r.actual !== undefined; })
+    .filter(r => (r.actual !== undefined))
     .groupBy('forecast')
-    .mapObject(function(arr)
+    .mapObject(arr =>
     {
-        let stats = _.chain(arr)
+        const stats = _.chain(arr)
         .pluck('actual')
-        .reduce(function(sum, x)
+        .reduce((sum, x) =>
         {
             sum.n++;
-            let delta = x - sum.mean;
+            const delta = x - sum.mean;
             sum.mean += delta / sum.n;
             sum.M2 += delta * (x - sum.mean);
 
@@ -90,13 +90,13 @@ dynamoScan(
 
     return json2csv({ data: results });
 })
-.then(function(results)
+.then(results =>
 {
-    console.log(results);
+    logger.info(results);
     return process.exit(0);
 })
-.catch(function(err)
+.catch(err =>
 {
-    console.error(err, err.stack);
+    logger.error(err, err.stack);
     return process.exit(1);
 });

@@ -1,4 +1,1 @@
-coverage
-docs
-node_modules
-*_es5.js
+Gruntfile.js
