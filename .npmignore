@@ -100,26 +100,28 @@ xcuserdata
 #sftp configuration file
 sftp-config.json
 
-node_modules
-docs/*.png
+/node_modules
+/docs/*.png
 
 # Enviroment files which may contain keys and secrets
-.env
-.yo-rc.json
+/.yo-rc.json
+
+# Flow types
+/flow-typed
 
 # Test artifacts
-xunit.xml
-coverage
+/xunit.xml
+/coverage
 
 # Specific stuff that we don't want in NPM but do want in Git
-.babelrc
+/.babelrc
 .eslintignore
 .eslintrc.js
 .flowconfig
 .gitignore
 .npmignore
-Gruntfile.js
-*.sublime-project
-src
-test
-default-api-keys.json
+/Gruntfile.js
+/*.sublime-project
+/src
+/test
+/default-api-keys.json
