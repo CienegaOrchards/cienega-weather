@@ -1,3 +1,4 @@
+/* @flow */
 'use strict';
 
 const logger           = require('@hughescr/logger').logger;
@@ -8,8 +9,9 @@ nconf.argv()
 
 const promisify        = require('es6-promisify');
 const _                = require('underscore');
-const moment           = require('moment-timezone');
-moment.tz.setDefault('US/Pacific');
+
+require('moment-timezone').tz.setDefault('US/Pacific');
+const moment = require('moment');
 
 const weather          = new (require('wundergroundnode'))(nconf.get('WUNDERGROUND:API_KEY'));
 const hourlyForecast   = promisify(weather.conditions().hourlyForecast().request.bind(weather));
@@ -32,19 +34,94 @@ const dynamoPutItem    = promisify(dynamo.putItem.bind(dynamo));
 
 const shortid          = require('shortid');
 
-exports.adjustForecast = function(forecast_temp)
+type LastSendInfoType =
+{
+    last_send_forecast_time: moment;
+    last_send_time : moment;
+    last_send_temp: number;
+}
+
+type NeedToSendResultType =
+{
+    prefix?: string;
+    reason?: string;
+    nothing?: boolean;
+}
+
+type PWSForecastType =
+{
+    FCTTIME:
+    {
+        epoch: number;
+    };
+    temp:
+    {
+        english: string;
+    };
+    feelslike:
+    {
+        english: string;
+    };
+    adjusted_estimate: number;
+}
+
+type PWSForecastArrayType =
+{
+    hourly_forecast: Array<PWSForecastType>;
+    current_observation:
+    {
+        temp_f: number;
+        feelslike_f: number;
+    };
+}
+
+type CurrentForecastType =
+{
+    temp: number;
+    feelslike: number;
+}
+
+type ForecastType =
+{
+    time: moment;
+    temp: number;
+    feelslike: number;
+}
+
+type DynamoStringType =
+{
+    S: string;
+}
+
+type DynamoResultType =
+{
+    Item:
+    {
+        phones:
+        {
+            L: Array<DynamoStringType>;
+        }
+    }
+}
+
+type TwilioAPIResponseType =
+{
+    body: string;
+}
+
+exports.adjustForecast = function(forecast_temp: number): number
 {
     return Math.round(71.294 * Math.log(forecast_temp) - 229.79);
 };
 
-exports.reverseForecastAdjustment = function(adjusted_temp)
+exports.reverseForecastAdjustment = function(adjusted_temp: number): number
 {
     return Math.exp((adjusted_temp + 229.79) / 71.294);
 };
 
-exports.sinceLastNoon = function(when)
+exports.sinceLastNoon = function(when: moment): boolean
 {
-    const todayNoon = moment().startOf('day').add(12, 'hours');
+    const todayNoon: moment = moment().startOf('day').add(12, 'hours');
     if(moment().isAfter(todayNoon))
     {
         return when.isAfter(todayNoon);
@@ -57,33 +134,33 @@ exports.sinceLastNoon = function(when)
 };
 
 let lowTriggerLevel = 32;
-exports.setLowTriggerLevel = function(temp)
+exports.setLowTriggerLevel = function(temp: number)
 {
     lowTriggerLevel = temp;
 };
-exports.tempInDangerZone = function(forecast)
+exports.tempInDangerZone = function(forecast: number): boolean
 {
-    return (forecast.feelslike !== undefined ? exports.adjustForecast(forecast.feelslike) : exports.adjustForecast(forecast)) <= lowTriggerLevel;
+    return exports.adjustForecast(forecast) <= lowTriggerLevel;
 };
 
 let highRecoveryLevel = 34;
-exports.setHighRecoveryLevel = function(temp)
+exports.setHighRecoveryLevel = function(temp: number)
 {
     highRecoveryLevel = temp;
 };
-exports.tempInSafeZone = function(forecast)
+exports.tempInSafeZone = function(forecast: number): boolean
 {
-    return (forecast.feelslike !== undefined ? exports.adjustForecast(forecast.feelslike) : exports.adjustForecast(forecast)) >= highRecoveryLevel;
+    return exports.adjustForecast(forecast) >= highRecoveryLevel;
 };
 
-exports.lowestForecastTemp = function(data)
+exports.lowestForecastTemp = function(data: PWSForecastArrayType): ForecastType
 {
     return _.chain(data.hourly_forecast) // Process the hourly_forecast data
-            .map(hour =>          // Extract just the time (as moment object), temp (fahrenheit), and feelslike (fahrenheit) for each hour
+            .map((hour: PWSForecastType): ForecastType =>          // Extract just the time (as moment object), temp (fahrenheit), and feelslike (fahrenheit) for each hour
             {
-                const timestamp = moment.unix(parseInt(hour.FCTTIME.epoch));
-                const temp = parseInt(hour.temp.english);
-                const feelslike = parseInt(hour.feelslike.english);
+                const timestamp: moment = moment.unix(parseInt(hour.FCTTIME.epoch));
+                const temp: number      = parseInt(hour.temp.english);
+                const feelslike: number = parseInt(hour.feelslike.english);
 
                 return {
                     time: timestamp,
@@ -91,11 +168,11 @@ exports.lowestForecastTemp = function(data)
                     feelslike: feelslike,
                 };
             })
-            .min(f => parseFloat(f.feelslike + f.time.format('.x'))) // Find the lowest forecast feelslike and secondary sort by date
+            .min((f: ForecastType): number => parseFloat(f.feelslike + f.time.format('.x'))) // Find the lowest forecast feelslike and secondary sort by date
             .value();
 };
 
-exports.messageForForecast = function(forecast)
+exports.messageForForecast = function(forecast: ForecastType): string
 {
     let msg = `Minimum forecast temp is ${exports.adjustForecast(forecast.temp)}ºF `;
     if(forecast.temp !== forecast.feelslike)
@@ -107,9 +184,9 @@ exports.messageForForecast = function(forecast)
     return msg;
 };
 
-exports.calculateNeedToSend = function(forecast, last_send_info)
+exports.calculateNeedToSend = function(forecast: ForecastType, last_send_info: LastSendInfoType): NeedToSendResultType
 {
-    if(this.tempInDangerZone(forecast))
+    if(this.tempInDangerZone(forecast.feelslike))
     {
         // Forecast is below freezing, so warn if we didn't already warn today or if last message was SAFE
         if(!this.sinceLastNoon(last_send_info.last_send_time) || this.tempInSafeZone(last_send_info.last_send_temp))
@@ -131,7 +208,7 @@ exports.calculateNeedToSend = function(forecast, last_send_info)
     }
 
     // If it's not below freezing now, check if it's now safe
-    if(this.tempInSafeZone(forecast))
+    if(this.tempInSafeZone(forecast.feelslike))
     {
         // Tonight will be safe; if we had sent a message before warning of low temp, we can now cancel
         if(this.sinceLastNoon(last_send_info.last_send_time) && this.tempInDangerZone(last_send_info.last_send_temp))
@@ -148,7 +225,7 @@ exports.calculateNeedToSend = function(forecast, last_send_info)
     return { nothing: true, reason: `No need to send since temp is warm (${forecast.feelslike}ºF/${exports.adjustForecast(forecast.feelslike)}ºF adjusted on ${forecast.time.format('dddd [at] ha')})` };
 };
 
-function getLastSendInfo()
+function getLastSendInfo(): DynamoResultType
 {
     return dynamoGetItem(
     {
@@ -163,7 +240,7 @@ function getLastSendInfo()
     });
 }
 
-function getTargetPhoneNumbers()
+function getTargetPhoneNumbers(): DynamoResultType
 {
     return dynamoGetItem(
     {
@@ -178,7 +255,7 @@ function getTargetPhoneNumbers()
     });
 }
 
-function getTempThresholds()
+function getTempThresholds(): DynamoResultType
 {
     return dynamoGetItem(
     {
@@ -193,7 +270,7 @@ function getTempThresholds()
     });
 }
 
-function saveLastSendInfo(forecast, message)
+function saveLastSendInfo(forecast: ForecastType, message: string): DynamoResultType
 {
     return dynamoUpdateItem(
     {
@@ -243,7 +320,7 @@ function saveLastSendInfo(forecast, message)
     });
 }
 
-function saveTemperaturesToLog(current, forecast)
+function saveTemperaturesToLog(current: CurrentForecastType, forecast: PWSForecastType): DynamoResultType
 {
     return dynamoPutItem(
     {
@@ -278,7 +355,7 @@ function saveTemperaturesToLog(current, forecast)
     });
 }
 
-exports.findNextNoon = function(time)
+exports.findNextNoon = function(time: moment): moment
 {
     const nextNoon = time.clone();
     if(nextNoon.hour() >= 12)
@@ -293,9 +370,9 @@ exports.findNextNoon = function(time)
     return nextNoon;
 };
 
-exports.sendMinimumForecast = function(event, context, callback)
+exports.sendMinimumForecast = function(event: mixed, context: mixed, callback: Function): Promise<void>
 {
-    Promise.all(
+    return Promise.all(
     [
         getLastSendInfo(),
 
@@ -305,31 +382,31 @@ exports.sendMinimumForecast = function(event, context, callback)
 
         hourlyForecast(ACTIVE_PWS),
     ])
-    .then(results =>
+    .then((results: [DynamoResultType, DynamoResultType, DynamoResultType, PWSForecastArrayType]): Promise<[]> =>
     {
-        const last_send_info          = _.mapObject(results[0].Item, val => { if(val.S) { return val.S; } if(val.N) { return parseInt(val.N); } });
+        const last_send_info          = _.mapObject(results[0].Item, (val: mixed): string|number|void => { if(val.S) { return val.S; } if(val.N) { return parseInt(val.N); } });
         last_send_info.last_send_time          = moment.unix(last_send_info.last_send_time);
         last_send_info.last_send_forecast_time = moment.unix(last_send_info.last_send_forecast_time);
 
-        const target_phone_numbers    = _.map(results[1].Item.phones.L, phone => phone.S);
+        const target_phone_numbers    = _.map(results[1].Item.phones.L, (phone: DynamoStringType): string => phone.S);
 
-        const threshold_temperatures  = _.mapObject(results[2].Item, val => { if(val.N) { return parseInt(val.N); } });
+        const threshold_temperatures  = _.mapObject(results[2].Item, (val: mixed): number|void => { if(val.N) { return parseInt(val.N); } });
         exports.setLowTriggerLevel(threshold_temperatures.lowTriggerLevel);
         exports.setHighRecoveryLevel(threshold_temperatures.highRecoveryLevel);
 
         const forecast = results[3];
         const nextNoon = exports.findNextNoon(moment()); // Get forecasts through the next time it's noon
-        forecast.hourly_forecast = _.filter(forecast.hourly_forecast, d => moment.unix(parseInt(d.FCTTIME.epoch)).isBefore(nextNoon));
+        forecast.hourly_forecast = _.filter(forecast.hourly_forecast, (d: PWSForecastType): boolean => moment.unix(parseInt(d.FCTTIME.epoch)).isBefore(nextNoon));
         const minForecast        = exports.lowestForecastTemp(forecast);
         let messageBody          = exports.messageForForecast(minForecast);
 
-        const current =
+        const current: CurrentForecastType =
         {
             temp:      forecast.current_observation.temp_f,
-            feelslike: parseFloat(forecast.current_observation.feelslike_f),
+            feelslike: parseInt(forecast.current_observation.feelslike_f),
         };
         // This formula below is estimate correction based on observations from 2016-02-28 through 2016-03-29 using avgDiff.js
-        forecast.hourly_forecast[0].adjusted_estimate = exports.adjustForecast(forecast.hourly_forecast[0].temp.english);
+        forecast.hourly_forecast[0].adjusted_estimate = exports.adjustForecast(parseInt(forecast.hourly_forecast[0].temp.english));
         logger.info(`Cur: ${current.temp} (${current.feelslike}); Forecast next hour: ${forecast.hourly_forecast[0].temp.english} (${forecast.hourly_forecast[0].feelslike.english}); Adjusted: ${forecast.hourly_forecast[0].adjusted_estimate}`);
 
         const needToSend = exports.calculateNeedToSend(minForecast, last_send_info);
@@ -343,7 +420,10 @@ exports.sendMinimumForecast = function(event, context, callback)
         }
 
         // Prepend any prefix onto the message
-        messageBody = `${needToSend.prefix} ${messageBody}`;
+        if(needToSend.prefix)
+        {
+            messageBody = `${needToSend.prefix} ${messageBody}`;
+        }
 
         return Promise.all(
         _.flatten(
@@ -352,7 +432,7 @@ exports.sendMinimumForecast = function(event, context, callback)
 
             saveTemperaturesToLog(current, forecast.hourly_forecast[0]),
 
-            _.map(target_phone_numbers, num =>
+            _.map(target_phone_numbers, (num: string): Promise<TwilioAPIResponseType> =>
             {
                 logger.info('Sending to', num, ':', messageBody);
                 return twilio.messages.create(
@@ -364,7 +444,7 @@ exports.sendMinimumForecast = function(event, context, callback)
             }),
         ]));
     })
-    .then(result =>
+    .then((result: [NeedToSendResultType, DynamoResultType, TwilioAPIResponseType]): void =>
     {
         if(result[0].nothing)
         {
@@ -375,7 +455,7 @@ exports.sendMinimumForecast = function(event, context, callback)
         logger.info(result[2].body);
         return callback(null, result[2].body);
     })
-    .catch(err =>
+    .catch((err: Error): void =>
     {
         logger.error(err);
         return callback(err);
