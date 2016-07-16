@@ -14,16 +14,28 @@ module.exports = function (grunt) {
                 'test'
             ]
         },
-        mochaTest: {
-            'test': {
-                'options': {
-                    'require': 'babel-register',
-                    'reporter': 'spec',
-                    'quiet': false,
-                    'clearRequireCache': false
+        mocha_istanbul:
+        {
+            coverage:
+            {
+                src: ['test/**/*.js'],
+                options:
+                {
+                    reportFormats: ['html'],
+                    root: 'src',
+                    coverageFolder: 'coverage',
+                    recursive: true,
+                    quiet: false,
+                    clearRequireCache: true,
+                    reporter: 'spec',
+                    slow: 1,
+                    timeout: 10000,
+                    scriptPath: require.resolve('isparta/bin/isparta'),
+                    nodeExec: require.resolve('.bin/babel-node'),
+                    mochaOptions: ['--compilers', 'js:babel-register'],
+                    istanbulOptions: ['--include-all-sources'],
                 },
-                'src': ['test/**/*.js']
-            }
+            },
         },
         flow: { 'sources': { 'options': { 'style': 'color' } } },
         babel: {
@@ -51,7 +63,7 @@ module.exports = function (grunt) {
     grunt.registerTask('test', [
         'lint',
         'flow',
-        'mochaTest'
+        'mocha_istanbul'
     ]);
     grunt.registerTask('build', [
         'clean',
