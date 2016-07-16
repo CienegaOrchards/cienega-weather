@@ -40,23 +40,17 @@ describe('Check trigger level', () =>
 {
     it('should use defaults if setting not explicit', () =>
     {
-        main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(31) }).should.equal(true);
-        main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(32) }).should.equal(true);
-        main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(33) }).should.equal(false);
-    });
-
-    it('should work with temp not wrapped in object', () =>
-    {
         main.tempInDangerZone(main.reverseForecastAdjustment(31)).should.equal(true);
+        main.tempInDangerZone(main.reverseForecastAdjustment(32)).should.equal(true);
         main.tempInDangerZone(main.reverseForecastAdjustment(33)).should.equal(false);
     });
 
     it('should respond to trigger level being set', () =>
     {
         main.setLowTriggerLevel(40);
-        main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(39) }).should.equal(true);
-        main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(40) }).should.equal(true);
-        main.tempInDangerZone({ feelslike: main.reverseForecastAdjustment(41) }).should.equal(false);
+        main.tempInDangerZone(main.reverseForecastAdjustment(39)).should.equal(true);
+        main.tempInDangerZone(main.reverseForecastAdjustment(40)).should.equal(true);
+        main.tempInDangerZone(main.reverseForecastAdjustment(41)).should.equal(false);
     });
 });
 
@@ -64,23 +58,17 @@ describe('Check reset level', () =>
 {
     it('should use defaults if setting not explicit', () =>
     {
-        main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(35) }).should.equal(true);
-        main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(34) }).should.equal(true);
-        main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(33) }).should.equal(false);
-    });
-
-    it('should work with temp not wrapped in object', () =>
-    {
         main.tempInSafeZone(main.reverseForecastAdjustment(35)).should.equal(true);
+        main.tempInSafeZone(main.reverseForecastAdjustment(34)).should.equal(true);
         main.tempInSafeZone(main.reverseForecastAdjustment(33)).should.equal(false);
     });
 
     it('should respond to recovery level being set', () =>
     {
         main.setHighRecoveryLevel(40);
-        main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(41) }).should.equal(true);
-        main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(40) }).should.equal(true);
-        main.tempInSafeZone({ feelslike: main.reverseForecastAdjustment(39) }).should.equal(false);
+        main.tempInSafeZone(main.reverseForecastAdjustment(41)).should.equal(true);
+        main.tempInSafeZone(main.reverseForecastAdjustment(40)).should.equal(true);
+        main.tempInSafeZone(main.reverseForecastAdjustment(39)).should.equal(false);
     });
 });
 
