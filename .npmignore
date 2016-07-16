@@ -122,3 +122,4 @@ Gruntfile.js
 *.sublime-project
 src
 test
+default-api-keys.json
