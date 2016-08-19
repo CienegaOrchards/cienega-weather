@@ -10,8 +10,8 @@ nconf.argv()
 const promisify        = require('es6-promisify');
 const _                = require('underscore');
 
-require('moment-timezone').tz.setDefault('US/Pacific');
-const moment = require('moment');
+const moment = require('moment-timezone');
+moment.tz.setDefault('US/Pacific');
 
 const weather          = new (require('wundergroundnode'))(nconf.get('WUNDERGROUND:API_KEY'));
 const hourlyForecast   = promisify(weather.conditions().hourlyForecast().request.bind(weather));
@@ -37,7 +37,7 @@ const shortid          = require('shortid');
 type LastSendInfoType =
 {
     last_send_forecast_time: moment;
-    last_send_time : moment;
+    last_send_time: moment;
     last_send_temp: number;
 }
 
@@ -50,16 +50,13 @@ type NeedToSendResultType =
 
 type PWSForecastType =
 {
-    FCTTIME:
-    {
+    FCTTIME: {
         epoch: number;
     };
-    temp:
-    {
+    temp: {
         english: string;
     };
-    feelslike:
-    {
+    feelslike: {
         english: string;
     };
     adjusted_estimate: number;
@@ -68,8 +65,7 @@ type PWSForecastType =
 type PWSForecastArrayType =
 {
     hourly_forecast: Array<PWSForecastType>;
-    current_observation:
-    {
+    current_observation: {
         temp_f: number;
         feelslike_f: number;
     };
@@ -95,10 +91,8 @@ type DynamoStringType =
 
 type DynamoResultType =
 {
-    Item:
-    {
-        phones:
-        {
+    Item: {
+        phones: {
             L: Array<DynamoStringType>;
         }
     }
