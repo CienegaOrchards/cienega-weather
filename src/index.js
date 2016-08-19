@@ -10,8 +10,8 @@ nconf.argv()
 const promisify        = require('es6-promisify');
 const _                = require('underscore');
 
-require('moment-timezone').tz.setDefault('US/Pacific');
-const moment = require('moment');
+const moment = require('moment-timezone');
+moment.tz.setDefault('US/Pacific');
 
 const weather          = new (require('wundergroundnode'))(nconf.get('WUNDERGROUND:API_KEY'));
 const hourlyForecast   = promisify(weather.conditions().hourlyForecast().request.bind(weather));
