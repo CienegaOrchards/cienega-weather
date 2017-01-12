@@ -1,6 +1,6 @@
 {
   "name": "cienega-weather",
-  "version": "2.1.3",
+  "version": "2.1.4",
   "description": "Weather monitor for Cienega Orchards weather; sends text alerts if forecast temperature will damage walnut trees",
   "private": true,
   "repository": {
