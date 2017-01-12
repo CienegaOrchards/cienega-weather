@@ -446,12 +446,12 @@ exports.sendMinimumForecast = function(event: mixed, context: mixed, callback: F
             return callback(null, result[0].reason);
         }
 
-        logger.info(result[2].body);
-        return callback(null, result[2].body);
+        logger.info(result[2] && result[2].body || 'Nothing sent');
+        return callback(null, result[2] && result[2].body || 'Nothing sent');
     })
     .catch((err: Error): void =>
     {
-        logger.error(err);
+        logger.error(err, err && err.stack);
         return callback(err);
     });
 };
