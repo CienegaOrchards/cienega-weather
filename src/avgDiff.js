@@ -34,7 +34,7 @@ dynamoScan(
         const temp = parseFloat(result.current_temp.N);
         const forecast = parseFloat(result.forecast_temp.N);
         return {
-            time:     parseInt(result.timestamp.N),
+            time:     moment.unix(parseInt(result.timestamp.N)),
             forecast: forecast,
             temp:     temp,
         };
@@ -42,20 +42,18 @@ dynamoScan(
     .sortBy('time')
     .value();
 
-    logger.info(`Earliest: ${moment.unix(results[0].time).format()}; Last: ${moment.unix(results[results.length - 1].time).format()}`);
+    logger.info(`Earliest: ${results[0].time.format()}; Last: ${results[results.length - 1].time.format()}`);
 
     results = _.chain(results)
     .map(result =>
     {
-        const myTime = moment.unix(result.time);
-        const actual = _.chain(results)
-        .find(r2 =>
+        const myTime = result.time;
+        const actual = _.find(results, r2 =>
         {
-            const hourDiff = moment.unix(r2.time).diff(myTime, 'hours', true);
+            const hourDiff = r2.time.diff(myTime, 'hours', true);
             if(hourDiff >= 0.4 && hourDiff <= 1.6) { return true; }
             return false;
-        })
-        .value();
+        });
 
         if(actual)
         {
@@ -66,6 +64,7 @@ dynamoScan(
         return result;
     })
     .filter(r => (r.actual !== undefined))
+    .map(r => { r.time = r.time._d; return r; })
     .groupBy('forecast')
     .mapObject(arr =>
     {
