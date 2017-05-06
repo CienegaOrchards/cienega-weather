@@ -243,7 +243,7 @@ describe('Need to send checks', () =>
         result.should.not.have.property('prefix');
         result.should.have.property('nothing');
         result.nothing.should.equal(true);
-        result.reason.should.equal(`No need to send since temp is warm (50ºF/49ºF adjusted on ${warmForecast.time.format('dddd')} at ${warmForecast.time.format('ha')})`);
+        result.reason.should.equal(`No need to send since temp is warm (50ºF/46ºF adjusted on ${warmForecast.time.format('dddd')} at ${warmForecast.time.format('ha')})`);
     });
 
     it('should not send if tonight will be warm and sent warm recently', () =>
@@ -252,7 +252,7 @@ describe('Need to send checks', () =>
         result.should.not.have.property('prefix');
         result.should.have.property('nothing');
         result.nothing.should.equal(true);
-        result.reason.should.equal(`No need to send since temp is warm (50ºF/49ºF adjusted on ${warmForecast.time.format('dddd')} at ${warmForecast.time.format('ha')})`);
+        result.reason.should.equal(`No need to send since temp is warm (50ºF/46ºF adjusted on ${warmForecast.time.format('dddd')} at ${warmForecast.time.format('ha')})`);
     });
 
     it('should not send if tonight will be cold and sent cold recently', () =>
