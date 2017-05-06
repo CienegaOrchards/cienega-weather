@@ -105,12 +105,12 @@ type TwilioAPIResponseType =
 
 exports.adjustForecast = function(forecast_temp: number): number
 {
-    return Math.round(71.294 * Math.log(forecast_temp) - 229.79);
+    return Math.round(35.993 * Math.log(forecast_temp) - 95.062);
 };
 
 exports.reverseForecastAdjustment = function(adjusted_temp: number): number
 {
-    return Math.exp((adjusted_temp + 229.79) / 71.294);
+    return Math.exp((adjusted_temp + 95.062) / 35.993);
 };
 
 exports.sinceLastNoon = function(when: moment): boolean
