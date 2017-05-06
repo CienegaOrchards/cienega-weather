@@ -1,6 +1,6 @@
 'use strict';
 
-const logger = require('@hughescr/logger');
+const logger = require('@hughescr/logger').logger;
 const nconf     = require('nconf');
 nconf.argv()
      .env()
