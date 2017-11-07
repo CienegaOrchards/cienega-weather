@@ -6,6 +6,7 @@ const main = require('../src/index.js');
 const data = require('./data/weather-sample.json');
 const moment = require('moment-timezone');
 moment.tz.setDefault('US/Pacific');
+const FORMAT = 'YYYYMMDDTHH:mm:ssZ';
 
 describe('Check calculations for last noon', () =>
 {
@@ -110,10 +111,10 @@ describe('Check when next noon is', () =>
 {
     it('should calculate next noon correctly for various datetimes', () =>
     {
-        main.findNextNoon(moment('20160101T11:59:59-0800')).diff(moment('20160101T12:00:00-0800'), 'seconds').should.equal(0);
-        main.findNextNoon(moment('20160101T12:00:00-0800')).diff(moment('20160102T12:00:00-0800'), 'seconds').should.equal(0);
-        main.findNextNoon(moment('20160101T00:00:00-0800')).diff(moment('20160101T12:00:00-0800'), 'seconds').should.equal(0);
-        main.findNextNoon(moment('20160101T23:59:59-0800')).diff(moment('20160102T12:00:00-0800'), 'seconds').should.equal(0);
+        main.findNextNoon(moment('20160101T11:59:59-0800', FORMAT)).diff(moment('20160101T12:00:00-0800', FORMAT), 'seconds').should.equal(0);
+        main.findNextNoon(moment('20160101T12:00:00-0800', FORMAT)).diff(moment('20160102T12:00:00-0800', FORMAT), 'seconds').should.equal(0);
+        main.findNextNoon(moment('20160101T00:00:00-0800', FORMAT)).diff(moment('20160101T12:00:00-0800', FORMAT), 'seconds').should.equal(0);
+        main.findNextNoon(moment('20160101T23:59:59-0800', FORMAT)).diff(moment('20160102T12:00:00-0800', FORMAT), 'seconds').should.equal(0);
     });
 });
 
