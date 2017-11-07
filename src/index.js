@@ -376,15 +376,15 @@ exports.sendMinimumForecast = function(event: mixed, context: mixed, callback: F
 
         hourlyForecast(ACTIVE_PWS),
     ])
-    .then((results: [DynamoResultType, DynamoResultType, DynamoResultType, PWSForecastArrayType]): Promise<[]> =>
+    .then((results: [DynamoResultType, DynamoResultType, DynamoResultType, PWSForecastArrayType]): Promise<Array<NeedToSendResultType|DynamoResultType|TwilioAPIResponseType>> =>
     {
-        const last_send_info          = _.mapObject(results[0].Item, (val: mixed): string|number|void => { if(val.S) { return val.S; } if(val.N) { return parseInt(val.N); } });
+        const last_send_info          = _.mapObject(results[0].Item, (val: {S?: string, N?: string}): string|number|void => { if(val.S) { return val.S; } if(val.N) { return parseInt(val.N); } });
         last_send_info.last_send_time          = moment.unix(last_send_info.last_send_time);
         last_send_info.last_send_forecast_time = moment.unix(last_send_info.last_send_forecast_time);
 
         const target_phone_numbers    = _.map(results[1].Item.phones.L, (phone: DynamoStringType): string => phone.S);
 
-        const threshold_temperatures  = _.mapObject(results[2].Item, (val: mixed): number|void => { if(val.N) { return parseInt(val.N); } });
+        const threshold_temperatures  = _.mapObject(results[2].Item, (val: {S?: string, N?: string}): number|void => { if(val.N) { return parseInt(val.N); } });
         exports.setLowTriggerLevel(threshold_temperatures.lowTriggerLevel);
         exports.setHighRecoveryLevel(threshold_temperatures.highRecoveryLevel);
 
@@ -438,12 +438,12 @@ exports.sendMinimumForecast = function(event: mixed, context: mixed, callback: F
             }),
         ]));
     })
-    .then((result: [NeedToSendResultType, DynamoResultType, TwilioAPIResponseType]): void =>
+    .then((result: Array<NeedToSendResultType|DynamoResultType|TwilioAPIResponseType>): void =>
     {
         if(result[0].nothing)
         {
-            logger.info(result[0].reason);
-            return callback(null, result[0].reason);
+            logger.info(result[0].reason || 'No reason');
+            return callback(null, result[0].reason || 'No reason');
         }
 
         logger.info(result[2] && result[2].body || 'Nothing sent');
