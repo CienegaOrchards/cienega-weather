@@ -14,26 +14,18 @@ module.exports = function (grunt) {
                 'test'
             ]
         },
-        mocha_istanbul:
+        mocha_nyc:
         {
             coverage:
             {
                 src: ['test/**/*.js'],
                 options:
                 {
-                    reportFormats: ['html'],
-                    root: 'src',
-                    coverageFolder: 'coverage',
-                    recursive: true,
-                    quiet: false,
-                    clearRequireCache: true,
+                    reportFormats: ['html', 'text'],
+                    require: ['babel-register'],
                     reporter: 'spec',
                     slow: 1,
                     timeout: 10000,
-                    scriptPath: require.resolve('isparta/bin/isparta'),
-                    nodeExec: require.resolve('.bin/babel-node'),
-                    mochaOptions: ['--compilers', 'js:babel-register'],
-                    istanbulOptions: ['--include-all-sources'],
                 },
             },
         },
@@ -63,7 +55,7 @@ module.exports = function (grunt) {
     grunt.registerTask('test', [
         'lint',
         'flow',
-        'mocha_istanbul'
+        'mocha_nyc'
     ]);
     grunt.registerTask('build', [
         'clean',
