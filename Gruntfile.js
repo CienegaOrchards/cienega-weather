@@ -53,7 +53,6 @@ module.exports = function (grunt) {
     });
     grunt.registerTask('lint', ['eslint']);
     grunt.registerTask('test', [
-        'lint',
         'flow',
         'mocha_nyc'
     ]);
