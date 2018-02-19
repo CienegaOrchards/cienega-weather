@@ -283,7 +283,7 @@ function saveLastSendInfo(forecast: ForecastType, message: string): DynamoResult
                 Action: 'PUT',
                 Value:
                 {
-                    N: forecast.temp.toString(),
+                    N: forecast.feelslike.toString(),
                 },
             },
             last_send_time:
