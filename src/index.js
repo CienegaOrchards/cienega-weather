@@ -7,7 +7,7 @@ nconf.argv()
      .env()
      .file({ file: 'api-keys.json' });
 
-const promisify        = require('es6-promisify');
+const promisify        = require('util').promisify;
 const _                = require('underscore');
 
 const moment = require('moment-timezone');
