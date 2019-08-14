@@ -19,7 +19,7 @@
   "devDependencies": {
     "@babel/core": "^7.5.5",
     "@hughescr/eslint-config-flow": "^2.1.5",
-    "aws-sdk": "^2.504.0",
+    "aws-sdk": "^2.509.0",
     "babel-cli": "^6.26.0",
     "babel-eslint": "^10.0.2",
     "babel-plugin-transform-flow-strip-types": "^6.22.0",
@@ -27,7 +27,7 @@
     "chai-as-promised": "^7.1.1",
     "chai-datetime": "^1.5.0",
     "eslint": "^6.1.0",
-    "eslint-plugin-flowtype": "^3.13.0",
+    "eslint-plugin-flowtype": "^4.2.0",
     "eslint-plugin-if-in-test": "^0.2.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-should-promised": "^2.0.0",
