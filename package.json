@@ -18,15 +18,15 @@
   "readmeFilename": "README.md",
   "devDependencies": {
     "@babel/core": "^7.5.5",
-    "@hughescr/eslint-config-flow": "^2.1.5",
-    "aws-sdk": "^2.509.0",
+    "@hughescr/eslint-config-flow": "^2.1.6",
+    "aws-sdk": "^2.518.0",
     "babel-cli": "^6.26.0",
-    "babel-eslint": "^10.0.2",
+    "babel-eslint": "^10.0.3",
     "babel-plugin-transform-flow-strip-types": "^6.22.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chai-datetime": "^1.5.0",
-    "eslint": "^6.1.0",
+    "eslint": "^6.2.2",
     "eslint-plugin-flowtype": "^4.2.0",
     "eslint-plugin-if-in-test": "^0.2.0",
     "eslint-plugin-promise": "^4.2.1",
@@ -51,7 +51,7 @@
     "moment-timezone": "^0.5.26",
     "nconf": "^0.10.0",
     "shortid": "^2.2.14",
-    "twilio": "^3.33.3",
+    "twilio": "^3.33.4",
     "underscore": "^1.9.1",
     "wundergroundnode": "^0.11.0"
   }
